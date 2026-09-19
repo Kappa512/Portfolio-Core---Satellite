@@ -36,15 +36,24 @@
     font-family:'IBM Plex Mono', monospace;
     font-size: 12px;
     color: var(--text-muted);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .accent-rule{
+    width: 46px; height: 3px; border-radius: 2px; margin: 10px 0 16px;
+    background: linear-gradient(90deg, var(--core) 0%, var(--core) 48%, var(--satellite) 52%, var(--satellite) 100%);
   }
   h1{
     font-family:'Fraunces', serif;
     font-weight: 500;
-    font-size: 34px;
-    margin: 6px 0 4px;
+    font-size: 38px;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
   }
-  header p{ color: var(--text-muted); margin: 0; font-size: 14.5px; line-height: 1.5; max-width: 60ch; }
+  h1 .core-word{ color: var(--core); }
+  h1 .satellite-word{ color: var(--satellite); }
+  h1 .amp{ color: var(--text-muted); font-style: italic; font-weight: 400; padding: 0 2px; }
+  header p{ color: var(--text-muted); margin: 0; font-size: 15px; line-height: 1.6; max-width: 52ch; }
 
   .totalbar{
     display:flex; justify-content:space-between; align-items:baseline;
@@ -276,8 +285,9 @@
 
   <header>
     <div class="eyebrow">Gestione portfolio</div>
-    <h1>Core &amp; Satellite</h1>
-    <p>Registra un investimento, dividilo tra Core e Satellite e assegna le percentuali ai tuoi blocchi. Ogni investimento si somma ai precedenti nel portfolio complessivo.</p>
+    <h1><span class="core-word">Core</span> <span class="amp">&amp;</span> <span class="satellite-word">Satellite</span></h1>
+    <div class="accent-rule"></div>
+    <p>Registra ogni investimento, dividilo tra Core e Satellite e assegna gli strumenti ai tuoi blocchi. Il portfolio si aggiorna da solo, si somma nel tempo e resta modificabile in ogni sua parte, dai singoli strumenti fino alla cronologia.</p>
     <div class="totalbar">
       <span class="label">Totale investito finora</span>
       <span class="value" id="totalInvested">€ 0</span>
