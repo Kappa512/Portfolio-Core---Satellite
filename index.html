@@ -116,6 +116,7 @@
   .btn-primary.editing{ background: var(--satellite); }
 
   .tx-actions{ display:flex; gap: 4px; align-items:center; }
+  .confirm-label{ font-size: 11px; color: var(--danger); margin-right: 2px; }
   .btn-edit-link{
     background:none; color: var(--core); padding: 4px 8px; font-size:12px;
   }
@@ -157,6 +158,13 @@
   .dot.core{ background: var(--core); }
   .dot.satellite{ background: var(--satellite); }
   .sub-block-title{ font-size: 13.5px; font-weight: 600; }
+  .core-tip{
+    font-size: 12px; color: var(--text-muted); line-height: 1.55;
+    border-left: 2px solid var(--core-dim);
+    padding: 6px 0 6px 10px;
+    margin-bottom: 14px;
+  }
+  .core-tip strong{ color: var(--text); font-weight: 600; }
 
   .sub-row{
     display:grid; grid-template-columns: 1fr 76px; gap: 8px; margin-bottom: 8px;
@@ -246,9 +254,12 @@
   .donut-holder{ flex: 0 0 auto; }
   .legend{ width: 100%; min-width: 0; }
   .legend-row{
-    display:flex; align-items:flex-start; gap:8px; padding: 8px 0;
+    display:flex; align-items:flex-start; gap:8px; padding: 8px 4px;
+    margin: 0 -4px;
     border-bottom: 1px solid var(--border); font-size: 13.5px;
+    border-radius: 6px; transition: background .15s ease;
   }
+  .legend-row:hover{ background: rgba(255,255,255,0.035); }
   .legend-row:last-child{ border-bottom:none; }
   .legend-row .dot{ flex:0 0 auto; margin-top: 5px; }
   .legend-row .lname{ flex:1; min-width: 0; overflow-wrap: break-word; line-height: 1.35; }
@@ -338,6 +349,7 @@
     <div class="sub-blocks">
       <div class="sub-block core-block">
         <div class="sub-block-head"><span class="dot core"></span><span class="sub-block-title">Core — 3 blocchi</span></div>
+        <div class="core-tip">Un Core bilanciato indicativamente segue queste proporzioni: <strong>ETF azionario globale 60–70%</strong>, <strong>oro 15–20%</strong>, <strong>obbligazioni 10–20%</strong> del Core.</div>
         <div id="coreRows"></div>
         <div class="sub-total" id="coreSubTotal"></div>
       </div>
@@ -374,19 +386,21 @@ const STORAGE_KEY = 'core_satellite_transactions';
 const NAMES_KEY = 'core_satellite_block_names';
 let transactions = [];
 let editingId = null;
+let pendingDeleteId = null;
 
-const coreNamesDefault = ['Core 1', 'Core 2', 'Core 3'];
+const coreNamesDefault = ['ETF azionario globale', 'Oro', 'Obbligazioni'];
 const satNamesDefault = ['Satellite 1', 'Satellite 2', 'Satellite 3'];
 
-function buildRows(containerId, names, pcts){
+function buildRows(containerId, placeholders, pcts, values){
   const c = document.getElementById(containerId);
   c.innerHTML = '';
-  names.forEach((n, i) => {
+  placeholders.forEach((ph, i) => {
     const row = document.createElement('div');
     row.className = 'sub-row';
     const pctVal = (pcts && pcts[i] !== undefined) ? pcts[i] : 0;
+    const val = (values && values[i]) ? values[i] : '';
     row.innerHTML = `
-      <input type="text" class="sub-name" data-i="${i}" value="${n}" placeholder="Nome blocco">
+      <input type="text" class="sub-name" data-i="${i}" value="${val}" placeholder="${ph}">
       <input type="number" class="sub-pct" data-i="${i}" min="0" max="100" step="1" value="${pctVal === 0 ? '' : pctVal}" placeholder="0">
     `;
     c.appendChild(row);
@@ -419,7 +433,7 @@ function fmtPct(n){
 
 function readSubRows(containerId){
   const c = document.getElementById(containerId);
-  const names = [...c.querySelectorAll('.sub-name')].map(i => i.value.trim());
+  const names = [...c.querySelectorAll('.sub-name')].map(i => i.value.trim() || i.placeholder || '');
   const pcts = [...c.querySelectorAll('.sub-pct')].map(i => parseFloat(i.value) || 0);
   return names.map((name, i) => ({ name, pct: pcts[i] }));
 }
@@ -827,15 +841,22 @@ function render(){
       const dateStr = d.toLocaleDateString('it-IT', {day:'2-digit', month:'short', year:'numeric'});
       const coreDetail = (t.coreSub||[]).map(s => `${s.name} ${fmtPct(s.pct)}`).join(', ') || '—';
       const satDetail = (t.satSub||[]).map(s => `${s.name} ${fmtPct(s.pct)}`).join(', ') || '—';
+      const actionsHtml = pendingDeleteId === t.id
+        ? `<span class="tx-actions">
+            <span class="confirm-label">Rimuovere?</span>
+            <button class="btn-danger-link" onclick="removeTx(${t.id})">Conferma</button>
+            <button class="btn-edit-link" onclick="cancelRemoveTx()">Annulla</button>
+          </span>`
+        : `<span class="tx-actions">
+            <button class="btn-edit-link" onclick="editTx(${t.id})">Modifica</button>
+            <button class="btn-danger-link" onclick="requestRemoveTx(${t.id})">Rimuovi</button>
+          </span>`;
       return `
         <div class="tx">
           <div class="tx-top">
             <span class="tx-amount">${fmtEuro(t.amount)}</span>
             <span class="tx-date">${dateStr}</span>
-            <span class="tx-actions">
-              <button class="btn-edit-link" onclick="editTx(${t.id})">Modifica</button>
-              <button class="btn-danger-link" onclick="removeTx(${t.id})">Rimuovi</button>
-            </span>
+            ${actionsHtml}
           </div>
           <div class="tx-detail">
             Core ${fmtPct(t.corePct)} (${coreDetail}) · Satellite ${fmtPct(t.satPct)} (${satDetail})
@@ -846,9 +867,20 @@ function render(){
   }
 }
 
+window.requestRemoveTx = function(id){
+  pendingDeleteId = id;
+  render();
+};
+
+window.cancelRemoveTx = function(){
+  pendingDeleteId = null;
+  render();
+};
+
 window.removeTx = async function(id){
+  pendingDeleteId = null;
   if (editingId === id) resetFormAfterSave();
-  transactions = transactions.filter(t => t.id !== id);
+  transactions = transactions.filter(tx => tx.id !== id);
   await saveTransactions();
   render();
 };
@@ -864,21 +896,21 @@ window.editTx = function(id){
   satPctEl.value = t.satPct;
 
   // Sempre 3 righe per blocco, anche se in fase di aggiunta ne erano state
-  // valorizzate solo alcune: le mancanti vengono riempite con un nome di
-  // default e percentuale 0, così restano modificabili/aggiungibili.
-  function padToThree(savedSub, defaults){
+  // valorizzate solo alcune: le mancanti restano vuote (col placeholder)
+  // e percentuale 0, così restano modificabili/aggiungibili.
+  function padToThree(savedSub){
     const names = [], pcts = [];
     for (let i = 0; i < 3; i++){
       const entry = (savedSub || [])[i];
-      names.push(entry ? entry.name : defaults[i]);
+      names.push(entry ? entry.name : '');
       pcts.push(entry ? entry.pct : 0);
     }
     return { names, pcts };
   }
-  const coreData = padToThree(t.coreSub, coreNamesDefault);
-  const satData = padToThree(t.satSub, satNamesDefault);
-  buildRows('coreRows', coreData.names, coreData.pcts);
-  buildRows('satRows', satData.names, satData.pcts);
+  const coreData = padToThree(t.coreSub);
+  const satData = padToThree(t.satSub);
+  buildRows('coreRows', coreNamesDefault, coreData.pcts, coreData.names);
+  buildRows('satRows', satNamesDefault, satData.pcts, satData.names);
 
   updateSplitUI();
   updateSubTotals();
@@ -903,8 +935,8 @@ async function init(){
   });
 
   const savedNames = await loadBlockNames();
-  buildRows('coreRows', (savedNames && savedNames.core && savedNames.core.length) ? savedNames.core : coreNamesDefault);
-  buildRows('satRows', (savedNames && savedNames.satellite && savedNames.satellite.length) ? savedNames.satellite : satNamesDefault);
+  buildRows('coreRows', coreNamesDefault, [], (savedNames && savedNames.core) ? savedNames.core : []);
+  buildRows('satRows', satNamesDefault, [], (savedNames && savedNames.satellite) ? savedNames.satellite : []);
 
   document.getElementById('coreRows').addEventListener('focusout', (e) => {
     if (e.target.classList.contains('sub-name')) saveBlockNames();
