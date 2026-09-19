@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Core-Satellite</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#14181c">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14181c;
+    --panel: #1c2126;
+    --panel-2: #20262c;
+    --border: #2a3036;
+    --text: #e7e3d8;
+    --text-muted: #8b9198;
+    --core: #5c9a91;
+    --core-dim: #395a55;
+    --satellite: #c79a3c;
+    --satellite-dim: #715d2c;
+    --danger: #c1564b;
+    --unalloc: #3a4148;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    padding: 40px 20px 80px;
+  }
+  .wrap{ max-width: 720px; margin: 0 auto; }
+
+  header{ margin-bottom: 36px; }
+  header .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .accent-rule{
+    width: 46px; height: 3px; border-radius: 2px; margin: 10px 0 16px;
+    background: linear-gradient(90deg, var(--core) 0%, var(--core) 48%, var(--satellite) 52%, var(--satellite) 100%);
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight: 500;
+    font-size: 38px;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+  }
+  h1 .core-word{ color: var(--core); }
+  h1 .satellite-word{ color: var(--satellite); }
+  h1 .amp{ color: var(--text-muted); font-style: italic; font-weight: 400; padding: 0 2px; }
+  header p{ color: var(--text-muted); margin: 0; font-size: 15px; line-height: 1.6; max-width: 52ch; }
+
+  .totalbar{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border);
+  }
+  .totalbar .label{ font-size: 13px; color: var(--text-muted); }
+  .totalbar .value{ font-family:'IBM Plex Mono', monospace; font-size: 26px; }
+
+  section.step{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 24px 26px;
+    margin-bottom: 18px;
+  }
+  .step-head{
+    display:flex; align-items:baseline; gap: 10px; margin-bottom: 18px;
+  }
+  .step-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .step-title{
+    font-family:'Fraunces', serif;
+    font-size: 19px;
+    font-weight: 500;
+  }
+
+  label{ display:block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+
+  input[type=number], input[type=text], input[type=date]{
+    width:100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 15px;
+  }
+  input[type=text]{ font-family:'Inter', sans-serif; }
+  input:focus{ outline: none; border-color: var(--core); }
+
+  .amount-date-row{ display:flex; gap: 16px; flex-wrap: wrap; }
+  .amount-row{ max-width: 260px; flex: 1 1 180px; }
+  .date-row{ max-width: 200px; flex: 1 1 160px; }
+  .date-row input{ color-scheme: dark; }
+
+  .edit-banner{
+    display:flex; align-items:center; justify-content:space-between;
+    background: var(--satellite-dim); color: #f0dfb2;
+    border-radius: 7px; padding: 10px 14px; margin-bottom: 18px;
+    font-size: 13px;
+  }
+  .edit-banner button{
+    background:none; border: 1px solid #f0dfb2; color:#f0dfb2;
+    padding: 5px 10px; font-size: 12px;
+  }
+  .btn-primary.editing{ background: var(--satellite); }
+
+  .tx-actions{ display:flex; gap: 4px; align-items:center; }
+  .confirm-label{ font-size: 11px; color: var(--danger); margin-right: 2px; }
+  .btn-edit-link{
+    background:none; color: var(--core); padding: 4px 8px; font-size:12px;
+  }
+
+  .split-grid{
+    display:grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  .split-field .pct-label{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;
+  }
+  .split-field .pct-label .tag{
+    font-size: 11px; font-family:'IBM Plex Mono', monospace;
+    padding: 2px 7px; border-radius: 4px;
+  }
+  .tag.core{ background: var(--core-dim); color: #cfe8e3; }
+  .tag.satellite{ background: var(--satellite-dim); color: #f0dfb2; }
+
+  .bar{
+    height: 8px; border-radius: 4px; background: var(--panel-2);
+    overflow:hidden; margin-top: 14px; display:flex; border: 1px solid var(--border);
+  }
+  .bar .seg{ height:100%; }
+  .bar .seg.core{ background: var(--core); }
+  .bar .seg.satellite{ background: var(--satellite); }
+
+  .validation{
+    font-size: 12.5px; margin-top: 10px; font-family:'IBM Plex Mono', monospace;
+  }
+  .validation.ok{ color: var(--text-muted); }
+  .validation.err{ color: var(--danger); }
+
+  .sub-blocks{ display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 620px){ .sub-blocks, .split-grid{ grid-template-columns: 1fr; } }
+
+  .sub-block-head{
+    display:flex; align-items:center; gap:8px; margin-bottom: 12px;
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; }
+  .dot.core{ background: var(--core); }
+  .dot.satellite{ background: var(--satellite); }
+  .sub-block-title{ font-size: 13.5px; font-weight: 600; }
+  .core-tip{
+    font-size: 12px; color: var(--text-muted); line-height: 1.55;
+    border-left: 2px solid var(--core-dim);
+    padding: 6px 0 6px 10px;
+    margin-bottom: 14px;
+  }
+  .core-tip strong{ color: var(--text); font-weight: 600; }
+
+  .sub-row{
+    display:grid; grid-template-columns: 1fr 76px; gap: 8px; margin-bottom: 8px;
+  }
+  .sub-row input[type=number]{ text-align: right; }
+
+  .sub-total{
+    font-size: 12px; font-family:'IBM Plex Mono', monospace; color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .sub-total.err{ color: var(--danger); }
+
+  button{
+    font-family:'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    border-radius: 7px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: opacity .15s ease;
+  }
+  button:hover{ opacity: 0.88; }
+  button:disabled{ opacity: 0.35; cursor: not-allowed; }
+  .btn-primary{ background: var(--core); color: #0e1513; width:100%; margin-top: 22px; }
+  .btn-secondary{
+    background: transparent; color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .btn-danger-link{
+    background:none; color: var(--danger); padding: 4px 8px; font-size:12px;
+  }
+
+  .portfolio-section{ margin-top: 26px; }
+  .portfolio-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 20px; }
+  .portfolio-head h2{
+    font-family:'Fraunces', serif; font-weight:500; font-size: 22px; margin:0;
+  }
+
+  .empty-state{
+    color: var(--text-muted); font-size: 14px; padding: 30px 0; text-align:center;
+    border: 1px dashed var(--border); border-radius: 10px;
+  }
+
+  .charts-row{
+    display:flex; gap: 20px; flex-wrap: wrap;
+  }
+  .charts-row + .charts-row{ margin-top: 14px; }
+  .chart-panel{
+    flex: 1 1 300px;
+    min-width: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 16px 18px 18px;
+  }
+
+  .composition-split{ display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; }
+  .composition-col{ display:flex; flex-direction:column; align-items:center; min-width: 0; }
+  .composition-col-title{
+    font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px;
+  }
+  .composition-col .legend{ margin-top: 10px; }
+  .legend-row-stacked{
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .legend-row-stacked:last-child{ border-bottom: none; }
+  .legend-row-stacked .lr-top{
+    display:flex; align-items:flex-start; gap: 7px; font-size: 13px;
+  }
+  .legend-row-stacked .dot{ flex: 0 0 auto; margin-top: 4px; }
+  .legend-row-stacked .lname{ flex:1; min-width: 0; overflow-wrap: break-word; line-height: 1.3; }
+  .legend-row-stacked .lr-bottom{
+    display:flex; gap: 14px; margin-top: 4px; padding-left: 15px;
+    font-family:'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--text-muted);
+  }
+
+  .chart-panel-title{
+    font-size: 12px; color: var(--text-muted);
+    font-family:'IBM Plex Mono', monospace;
+    margin-bottom: 14px;
+  }
+  .chart-legend-wrap{
+    display:flex; flex-direction: column; align-items:center; gap: 16px;
+  }
+  .donut-holder{ flex: 0 0 auto; }
+  .legend{ width: 100%; min-width: 0; }
+  .legend-row{
+    display:flex; align-items:flex-start; gap:8px; padding: 8px 0;
+    border-bottom: 1px solid var(--border); font-size: 13.5px;
+  }
+  .legend-row:last-child{ border-bottom:none; }
+  .legend-row .dot{ flex:0 0 auto; margin-top: 5px; }
+  .legend-row .lname{ flex:1; min-width: 0; overflow-wrap: break-word; line-height: 1.35; }
+  .legend-row .lpct{ font-family:'IBM Plex Mono', monospace; color: var(--text-muted); flex: 0 0 auto; width: 42px; text-align:right; }
+  .legend-row .lval{ font-family:'IBM Plex Mono', monospace; flex: 0 0 auto; width: 82px; text-align:right; }
+
+  .legend-group-title{
+    font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted);
+    margin: 12px 0 4px; text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .legend-group-title:first-child{ margin-top: 0; }
+
+  .history{ margin-top: 30px; }
+  .history h3{
+    font-family:'Fraunces', serif; font-weight:500; font-size: 16px;
+    color: var(--text-muted); margin-bottom: 12px;
+  }
+  .tx{
+    background: var(--panel);
+    border:1px solid var(--border); border-radius: 9px;
+    padding: 14px 16px; margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .tx-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .tx-amount{ font-family:'IBM Plex Mono', monospace; font-size: 15px; }
+  .tx-date{ color: var(--text-muted); font-size: 12px; }
+  .tx-detail{ color: var(--text-muted); font-size: 12.5px; line-height:1.6; }
+
+  .footer-actions{ text-align:center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Gestione portfolio</div>
+    <h1><span class="core-word">Core</span> <span class="amp">&amp;</span> <span class="satellite-word">Satellite</span></h1>
+    <div class="accent-rule"></div>
+    <p>Registra ogni investimento, dividilo tra Core e Satellite e assegna gli strumenti ai tuoi blocchi. Il portfolio si aggiorna da solo, si somma nel tempo e resta modificabile in ogni sua parte, dai singoli strumenti fino alla cronologia.</p>
+    <div class="totalbar">
+      <span class="label">Totale investito finora</span>
+      <span class="value" id="totalInvested">€ 0</span>
+    </div>
+  </header>
+
+  <section class="step">
+    <div class="step-head">
+      <span class="step-num">01</span>
+      <span class="step-title">Importo dell'investimento</span>
+    </div>
+    <div class="amount-date-row">
+      <div class="amount-row">
+        <label for="amount">Quanto stai investendo (€)</label>
+        <input type="number" id="amount" min="0" step="1" placeholder="es. 100">
+      </div>
+      <div class="date-row">
+        <label for="txDate">Data</label>
+        <input type="date" id="txDate">
+      </div>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step-head">
+      <span class="step-num">02</span>
+      <span class="step-title">Suddivisione Core / Satellite</span>
+    </div>
+    <div class="split-grid">
+      <div class="split-field">
+        <div class="pct-label"><span class="tag core">Core</span></div>
+        <input type="number" id="corePct" min="0" max="100" step="1" value="70">
+      </div>
+      <div class="split-field">
+        <div class="pct-label"><span class="tag satellite">Satellite</span></div>
+        <input type="number" id="satellitePct" min="0" max="100" step="1" value="30">
+      </div>
+    </div>
+    <div class="bar"><div class="seg core" id="splitBarCore"></div><div class="seg satellite" id="splitBarSat"></div></div>
+    <div class="validation ok" id="splitValidation"></div>
+  </section>
+
+  <section class="step">
+    <div class="step-head">
+      <span class="step-num">03</span>
+      <span class="step-title">Allocazione dei blocchi</span>
+    </div>
+    <div class="sub-blocks">
+      <div class="sub-block core-block">
+        <div class="sub-block-head"><span class="dot core"></span><span class="sub-block-title">Core — 3 blocchi</span></div>
+        <div class="core-tip">Un Core bilanciato indicativamente segue queste proporzioni: <strong>ETF azionario globale 60–70%</strong>, <strong>oro 15–20%</strong>, <strong>obbligazioni 10–20%</strong> del Core.</div>
+        <div id="coreRows"></div>
+        <div class="sub-total" id="coreSubTotal"></div>
+      </div>
+      <div class="sub-block satellite-block">
+        <div class="sub-block-head"><span class="dot satellite"></span><span class="sub-block-title">Satellite — 3 blocchi</span></div>
+        <div id="satRows"></div>
+        <div class="sub-total" id="satSubTotal"></div>
+      </div>
+    </div>
+    <div class="edit-banner" id="editBanner" style="display:none;">
+      <span>Stai modificando un investimento esistente.</span>
+      <button id="cancelEditBtn">Annulla</button>
+    </div>
+    <button class="btn-primary" id="addBtn">Aggiungi investimento al portfolio</button>
+  </section>
+
+  <section class="portfolio-section">
+    <div class="portfolio-head">
+      <h2>Portfolio complessivo</h2>
+      <button class="btn-secondary" id="resetAllBtn">Azzera tutto</button>
+    </div>
+    <div id="portfolioBody"></div>
+  </section>
+
+  <div class="history" id="historyWrap" style="display:none;">
+    <h3>Storico investimenti</h3>
+    <div id="historyList"></div>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'core_satellite_transactions';
+const NAMES_KEY = 'core_satellite_block_names';
+let transactions = [];
+let editingId = null;
+let pendingDeleteId = null;
+
+const coreNamesDefault = ['ETF azionario globale', 'Oro', 'Obbligazioni'];
+const satNamesDefault = ['Satellite 1', 'Satellite 2', 'Satellite 3'];
+
+function buildRows(containerId, placeholders, pcts, values){
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  placeholders.forEach((ph, i) => {
+    const row = document.createElement('div');
+    row.className = 'sub-row';
+    const pctVal = (pcts && pcts[i] !== undefined) ? pcts[i] : 0;
+    const val = (values && values[i]) ? values[i] : '';
+    row.innerHTML = `
+      <input type="text" class="sub-name" data-i="${i}" value="${val}" placeholder="${ph}">
+      <input type="number" class="sub-pct" data-i="${i}" min="0" max="100" step="1" value="${pctVal === 0 ? '' : pctVal}" placeholder="0">
+    `;
+    c.appendChild(row);
+  });
+  updateSubTotals();
+}
+
+function todayISODate(){
+  const d = new Date();
+  const tz = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - tz*60000);
+  return local.toISOString().slice(0,10);
+}
+
+const amountEl = document.getElementById('amount');
+const txDateEl = document.getElementById('txDate');
+const corePctEl = document.getElementById('corePct');
+const satPctEl = document.getElementById('satellitePct');
+const splitBarCore = document.getElementById('splitBarCore');
+const splitBarSat = document.getElementById('splitBarSat');
+const splitValidation = document.getElementById('splitValidation');
+const addBtn = document.getElementById('addBtn');
+
+function fmtEuro(n){
+  return n.toLocaleString('it-IT', {style:'currency', currency:'EUR', maximumFractionDigits:2});
+}
+function fmtPct(n){
+  return n.toLocaleString('it-IT', {maximumFractionDigits:1}) + '%';
+}
+
+function readSubRows(containerId){
+  const c = document.getElementById(containerId);
+  const names = [...c.querySelectorAll('.sub-name')].map(i => i.value.trim() || i.placeholder || '');
+  const pcts = [...c.querySelectorAll('.sub-pct')].map(i => parseFloat(i.value) || 0);
+  return names.map((name, i) => ({ name, pct: pcts[i] }));
+}
+
+function updateSplitUI(){
+  const core = parseFloat(corePctEl.value) || 0;
+  const sat = parseFloat(satPctEl.value) || 0;
+  const total = core + sat;
+  splitBarCore.style.width = Math.min(core,100) + '%';
+  splitBarSat.style.width = Math.min(sat, 100-Math.min(core,100)) + '%';
+  if (total > 100){
+    splitValidation.textContent = `Il totale è ${fmtPct(total)} — supera il 100%, riduci una delle due percentuali.`;
+    splitValidation.className = 'validation err';
+  } else {
+    const rem = 100 - total;
+    splitValidation.textContent = rem > 0.01
+      ? `Core ${fmtPct(core)} + Satellite ${fmtPct(sat)} — resta ${fmtPct(rem)} non allocato (liquidità).`
+      : `Core ${fmtPct(core)} + Satellite ${fmtPct(sat)} — allocazione completa.`;
+    splitValidation.className = 'validation ok';
+  }
+  validateAll();
+}
+
+function updateSubTotals(){
+  const coreRows = readSubRows('coreRows');
+  const satRows = readSubRows('satRows');
+  const coreSum = coreRows.reduce((a,r) => a + r.pct, 0);
+  const satSum = satRows.reduce((a,r) => a + r.pct, 0);
+  const coreEl = document.getElementById('coreSubTotal');
+  const satEl = document.getElementById('satSubTotal');
+  coreEl.textContent = coreSum > 100
+    ? `Totale ${fmtPct(coreSum)} — supera il 100% del Core`
+    : `Totale ${fmtPct(coreSum)} del blocco Core${100-coreSum>0.01 ? ' · '+fmtPct(100-coreSum)+' non allocato' : ''}`;
+  coreEl.className = 'sub-total' + (coreSum > 100 ? ' err' : '');
+  satEl.textContent = satSum > 100
+    ? `Totale ${fmtPct(satSum)} — supera il 100% del Satellite`
+    : `Totale ${fmtPct(satSum)} del blocco Satellite${100-satSum>0.01 ? ' · '+fmtPct(100-satSum)+' non allocato' : ''}`;
+  satEl.className = 'sub-total' + (satSum > 100 ? ' err' : '');
+  validateAll();
+}
+
+function validateAll(){
+  const amount = parseFloat(amountEl.value) || 0;
+  const core = parseFloat(corePctEl.value) || 0;
+  const sat = parseFloat(satPctEl.value) || 0;
+  const coreSum = readSubRows('coreRows').reduce((a,r) => a + r.pct, 0);
+  const satSum = readSubRows('satRows').reduce((a,r) => a + r.pct, 0);
+  const ok = amount > 0 && (core + sat) <= 100 && coreSum <= 100 && satSum <= 100;
+  addBtn.disabled = !ok;
+}
+
+[corePctEl, satPctEl].forEach(el => el.addEventListener('input', updateSplitUI));
+amountEl.addEventListener('input', validateAll);
+document.getElementById('coreRows').addEventListener('input', updateSubTotals);
+document.getElementById('satRows').addEventListener('input', updateSubTotals);
+
+const hasClaudeStorage = () => typeof window.storage !== 'undefined' && window.storage;
+
+async function loadTransactions(){
+  try{
+    if (hasClaudeStorage()){
+      const res = await window.storage.get(STORAGE_KEY, false);
+      transactions = res ? JSON.parse(res.value) : [];
+    } else {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      transactions = raw ? JSON.parse(raw) : [];
+    }
+  }catch(e){
+    transactions = [];
+  }
+  render();
+}
+
+async function saveTransactions(){
+  try{
+    if (hasClaudeStorage()){
+      await window.storage.set(STORAGE_KEY, JSON.stringify(transactions), false);
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    }
+  }catch(e){
+    console.error('Storage error', e);
+  }
+}
+
+async function loadBlockNames(){
+  try{
+    if (hasClaudeStorage()){
+      const res = await window.storage.get(NAMES_KEY, false);
+      return res ? JSON.parse(res.value) : null;
+    } else {
+      const raw = localStorage.getItem(NAMES_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }
+  }catch(e){
+    return null;
+  }
+}
+
+async function saveBlockNames(){
+  const coreNames = [...document.querySelectorAll('#coreRows .sub-name')].map(i => i.value);
+  const satNames = [...document.querySelectorAll('#satRows .sub-name')].map(i => i.value);
+  const data = { core: coreNames, satellite: satNames };
+  try{
+    if (hasClaudeStorage()){
+      await window.storage.set(NAMES_KEY, JSON.stringify(data), false);
+    } else {
+      localStorage.setItem(NAMES_KEY, JSON.stringify(data));
+    }
+  }catch(e){
+    console.error('Storage error (nomi blocchi)', e);
+  }
+}
+
+function dateInputToISO(dateStr){
+  // dateStr è "YYYY-MM-DD" dall'input date; lo ancoriamo a mezzogiorno locale
+  // per evitare sbalzi di giorno dovuti al fuso orario.
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return new Date(y, m-1, d, 12, 0, 0).toISOString();
+}
+
+function resetFormAfterSave(){
+  amountEl.value = '';
+  txDateEl.value = todayISODate();
+  editingId = null;
+  document.getElementById('editBanner').style.display = 'none';
+  addBtn.textContent = 'Aggiungi investimento al portfolio';
+  addBtn.classList.remove('editing');
+}
+
+addBtn.addEventListener('click', async () => {
+  const amount = parseFloat(amountEl.value) || 0;
+  const corePct = parseFloat(corePctEl.value) || 0;
+  const satPct = parseFloat(satPctEl.value) || 0;
+  const coreSub = readSubRows('coreRows').filter(r => r.pct > 0 && r.name);
+  const satSub = readSubRows('satRows').filter(r => r.pct > 0 && r.name);
+  const dateISO = txDateEl.value ? dateInputToISO(txDateEl.value) : new Date().toISOString();
+
+  if (editingId !== null){
+    const idx = transactions.findIndex(t => t.id === editingId);
+    if (idx !== -1){
+      transactions[idx] = { ...transactions[idx], date: dateISO, amount, corePct, satPct, coreSub, satSub };
+    }
+  } else {
+    const tx = { id: Date.now(), date: dateISO, amount, corePct, satPct, coreSub, satSub };
+    transactions.push(tx);
+  }
+  await saveTransactions();
+  await saveBlockNames();
+
+  resetFormAfterSave();
+  render();
+});
+
+document.getElementById('cancelEditBtn').addEventListener('click', () => {
+  resetFormAfterSave();
+});
+
+document.getElementById('resetAllBtn').addEventListener('click', async () => {
+  if (!confirm('Azzerare tutto il portfolio? Questa azione non è reversibile.')) return;
+  transactions = [];
+  await saveTransactions();
+  render();
+});
+
+function aggregate(){
+  let totalAmount = 0;
+  const cats = {}; // key -> {label, type, amount}
+  function addCat(type, name, amt){
+    const key = type + ':' + name.trim().toLowerCase();
+    if (!cats[key]) cats[key] = { label: name.trim(), type, amount: 0 };
+    cats[key].amount += amt;
+  }
+  transactions.forEach(t => {
+    totalAmount += t.amount;
+    const coreAmt = t.amount * t.corePct / 100;
+    const satAmt = t.amount * t.satPct / 100;
+    const uninvested = t.amount - coreAmt - satAmt;
+    if (uninvested > 0.0001) addCat('cash', 'Liquidità', uninvested);
+
+    let coreSubSum = 0;
+    (t.coreSub || []).forEach(s => {
+      coreSubSum += s.pct;
+      addCat('core', s.name, coreAmt * s.pct / 100);
+    });
+    const coreRem = 100 - coreSubSum;
+    if (coreRem > 0.0001) addCat('core', 'Non allocato', coreAmt * coreRem / 100);
+
+    let satSubSum = 0;
+    (t.satSub || []).forEach(s => {
+      satSubSum += s.pct;
+      addCat('satellite', s.name, satAmt * s.pct / 100);
+    });
+    const satRem = 100 - satSubSum;
+    if (satRem > 0.0001) addCat('satellite', 'Non allocato', satAmt * satRem / 100);
+  });
+  return { totalAmount, categories: Object.values(cats).filter(c => c.amount > 0.0001) };
+}
+
+function aggregateMacro(){
+  let totalAmount = 0, core = 0, satellite = 0, cash = 0;
+  transactions.forEach(t => {
+    totalAmount += t.amount;
+    const coreAmt = t.amount * t.corePct / 100;
+    const satAmt = t.amount * t.satPct / 100;
+    core += coreAmt;
+    satellite += satAmt;
+    cash += (t.amount - coreAmt - satAmt);
+  });
+  const cats = [];
+  if (core > 0.0001) cats.push({ label: 'Core', type: 'core', amount: core });
+  if (satellite > 0.0001) cats.push({ label: 'Satellite', type: 'satellite', amount: satellite });
+  if (cash > 0.0001) cats.push({ label: 'Liquidità', type: 'cash', amount: cash });
+  return { totalAmount, categories: cats };
+}
+
+function colorFor(cat){
+  if (cat.type === 'core') return cat.label === 'Non allocato' ? '#3a4148' : '#5c9a91';
+  if (cat.type === 'satellite') return cat.label === 'Non allocato' ? '#3a4148' : '#c79a3c';
+  return '#565c62';
+}
+
+// Palette di colori distinti per il grafico "dettaglio per strumento": ogni
+// strumento riceve un colore diverso, assegnato in ordine di comparsa e
+// stabile finché la lista di strumenti non cambia.
+const detailPalette = [
+  '#5c9a91', '#c79a3c', '#7fa8d9', '#c1564b', '#9c7fc9',
+  '#7bbf6a', '#d98c5f', '#5fb3b3', '#c96fa3', '#a3a848'
+];
+function buildDetailColorMap(categories){
+  const map = {};
+  let idx = 0;
+  categories.forEach(cat => {
+    if (cat.label === 'Non allocato' || cat.type === 'cash') return;
+    const key = cat.type + ':' + cat.label.toLowerCase();
+    if (!(key in map)){
+      map[key] = detailPalette[idx % detailPalette.length];
+      idx++;
+    }
+  });
+  return map;
+}
+function makeColorForDetail(map){
+  return function(cat){
+    if (cat.label === 'Non allocato') return '#3a4148';
+    if (cat.type === 'cash') return '#565c62';
+    const key = cat.type + ':' + cat.label.toLowerCase();
+    return map[key] || '#8b9198';
+  };
+}
+
+function buildDualRingDonut(coreCats, coreTotal, satCats, satTotal, colorFn, size){
+  size = size || 200;
+  const cx = size/2, cy = size/2;
+  const outerR = size * 0.42, innerR = size * 0.26, sw = size * 0.12;
+
+  function ring(cats, total, r){
+    if (total <= 0.0001) return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${sw}" />`;
+    let angle = -90;
+    return cats.map(cat => {
+      const frac = cat.amount / total;
+      const sweep = frac * 360;
+      const start = angle;
+      const end = angle + sweep;
+      angle = end;
+      const large = sweep > 180 ? 1 : 0;
+      const toXY = (a) => {
+        const rad = (a * Math.PI) / 180;
+        return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+      };
+      const [x1,y1] = toXY(start);
+      const [x2,y2] = toXY(end);
+      if (sweep >= 359.99){
+        return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colorFn(cat)}" stroke-width="${sw}" />`;
+      }
+      return `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}" fill="none" stroke="${colorFn(cat)}" stroke-width="${sw}" stroke-linecap="butt" />`;
+    }).join('');
+  }
+
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      ${ring(satCats, satTotal, outerR)}
+      ${ring(coreCats, coreTotal, innerR)}
+      <text x="${cx}" y="${cy-5}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#8b9198">interno Core</text>
+      <text x="${cx}" y="${cy+9}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#8b9198">esterno Satellite</text>
+    </svg>`;
+}
+
+function buildDonut(categories, total, colorFn, size){
+  colorFn = colorFn || colorFor;
+  size = size || 200;
+  const r = size * 0.38, cx = size/2, cy = size/2, sw = size * 0.136;
+  const fontBig = size < 200 ? 14 : 19;
+  const fontSmall = size < 200 ? 9 : 11;
+  let angle = -90;
+  const paths = categories.map(cat => {
+    const frac = cat.amount / total;
+    const sweep = frac * 360;
+    const start = angle;
+    const end = angle + sweep;
+    angle = end;
+    const large = sweep > 180 ? 1 : 0;
+    const toXY = (a) => {
+      const rad = (a * Math.PI) / 180;
+      return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+    };
+    const [x1,y1] = toXY(start);
+    const [x2,y2] = toXY(end);
+    if (sweep >= 359.99){
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colorFn(cat)}" stroke-width="${sw}" />`;
+    }
+    return `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}" fill="none" stroke="${colorFn(cat)}" stroke-width="${sw}" stroke-linecap="butt" />`;
+  }).join('');
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      ${paths}
+      <text x="${cx}" y="${cy-4}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="${fontBig}" fill="#e7e3d8">${fmtEuro(total)}</text>
+      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${fontSmall}" fill="#8b9198">investiti</text>
+    </svg>`;
+}
+
+function render(){
+  const { totalAmount, categories } = aggregate();
+  document.getElementById('totalInvested').textContent = fmtEuro(totalAmount);
+
+  const body = document.getElementById('portfolioBody');
+  if (totalAmount <= 0){
+    body.innerHTML = `<div class="empty-state">Ancora nessun investimento registrato. Compila i passaggi sopra per iniziare.</div>`;
+  } else {
+    const macro = aggregateMacro();
+    const macroSorted = [...macro.categories].sort((a,b) => b.amount - a.amount);
+    const detailColorMap = buildDetailColorMap(categories);
+    const colorForDetail = makeColorForDetail(detailColorMap);
+    const detailSorted = [...categories].sort((a,b) => b.amount - a.amount);
+
+    const legendHtml = (list, total, colorFn) => list.map(c => `
+      <div class="legend-row">
+        <span class="dot" style="background:${colorFn(c)}"></span>
+        <span class="lname">${c.label}</span>
+        <span class="lpct">${fmtPct(c.amount/total*100)}</span>
+        <span class="lval">${fmtEuro(c.amount)}</span>
+      </div>`).join('');
+
+    const legendHtmlStacked = (list, total, colorFn) => list.map(c => `
+      <div class="legend-row-stacked">
+        <div class="lr-top">
+          <span class="dot" style="background:${colorFn(c)}"></span>
+          <span class="lname">${c.label}</span>
+        </div>
+        <div class="lr-bottom">
+          <span class="lpct">${fmtPct(c.amount/total*100)}</span>
+          <span class="lval">${fmtEuro(c.amount)}</span>
+        </div>
+      </div>`).join('');
+
+    const coreOnly = categories.filter(c => c.type === 'core').sort((a,b) => b.amount - a.amount);
+    const satOnly = categories.filter(c => c.type === 'satellite').sort((a,b) => b.amount - a.amount);
+    const coreOnlyTotal = coreOnly.reduce((a,c) => a + c.amount, 0);
+    const satOnlyTotal = satOnly.reduce((a,c) => a + c.amount, 0);
+
+    body.innerHTML = `
+      <div class="charts-row">
+        <div class="chart-panel">
+          <div class="chart-panel-title">Macro allocazione — Core / Satellite</div>
+          <div class="chart-legend-wrap">
+            <div class="donut-holder">${buildDonut(macroSorted, macro.totalAmount, colorFor)}</div>
+            <div class="legend">${legendHtml(macroSorted, macro.totalAmount, colorFor)}</div>
+          </div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-panel-title">Composizione Core / Satellite</div>
+          <div class="composition-split">
+            <div class="composition-col">
+              <div class="composition-col-title">Core · ${fmtEuro(coreOnlyTotal)}</div>
+              <div class="donut-holder">${buildDonut(coreOnly, coreOnlyTotal, colorForDetail, 140)}</div>
+              <div class="legend">${legendHtmlStacked(coreOnly, coreOnlyTotal, colorForDetail)}</div>
+            </div>
+            <div class="composition-col">
+              <div class="composition-col-title">Satellite · ${fmtEuro(satOnlyTotal)}</div>
+              <div class="donut-holder">${buildDonut(satOnly, satOnlyTotal, colorForDetail, 140)}</div>
+              <div class="legend">${legendHtmlStacked(satOnly, satOnlyTotal, colorForDetail)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-panel">
+          <div class="chart-panel-title">Dettaglio per strumento</div>
+          <div class="chart-legend-wrap">
+            <div class="donut-holder">${buildDonut(detailSorted, totalAmount, colorForDetail)}</div>
+            <div class="legend">${legendHtml(detailSorted, totalAmount, colorForDetail)}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const historyWrap = document.getElementById('historyWrap');
+  const historyList = document.getElementById('historyList');
+  if (transactions.length === 0){
+    historyWrap.style.display = 'none';
+  } else {
+    historyWrap.style.display = 'block';
+    const items = [...transactions].reverse().map(t => {
+      const d = new Date(t.date);
+      const dateStr = d.toLocaleDateString('it-IT', {day:'2-digit', month:'short', year:'numeric'});
+      const coreDetail = (t.coreSub||[]).map(s => `${s.name} ${fmtPct(s.pct)}`).join(', ') || '—';
+      const satDetail = (t.satSub||[]).map(s => `${s.name} ${fmtPct(s.pct)}`).join(', ') || '—';
+      const actionsHtml = pendingDeleteId === t.id
+        ? `<span class="tx-actions">
+            <span class="confirm-label">Rimuovere?</span>
+            <button class="btn-danger-link" onclick="removeTx(${t.id})">Conferma</button>
+            <button class="btn-edit-link" onclick="cancelRemoveTx()">Annulla</button>
+          </span>`
+        : `<span class="tx-actions">
+            <button class="btn-edit-link" onclick="editTx(${t.id})">Modifica</button>
+            <button class="btn-danger-link" onclick="requestRemoveTx(${t.id})">Rimuovi</button>
+          </span>`;
+      return `
+        <div class="tx">
+          <div class="tx-top">
+            <span class="tx-amount">${fmtEuro(t.amount)}</span>
+            <span class="tx-date">${dateStr}</span>
+            ${actionsHtml}
+          </div>
+          <div class="tx-detail">
+            Core ${fmtPct(t.corePct)} (${coreDetail}) · Satellite ${fmtPct(t.satPct)} (${satDetail})
+          </div>
+        </div>`;
+    }).join('');
+    historyList.innerHTML = items;
+  }
+}
+
+window.requestRemoveTx = function(id){
+  pendingDeleteId = id;
+  render();
+};
+
+window.cancelRemoveTx = function(){
+  pendingDeleteId = null;
+  render();
+};
+
+window.removeTx = async function(id){
+  pendingDeleteId = null;
+  if (editingId === id) resetFormAfterSave();
+  transactions = transactions.filter(tx => tx.id !== id);
+  await saveTransactions();
+  render();
+};
+
+window.editTx = function(id){
+  const t = transactions.find(tx => tx.id === id);
+  if (!t) return;
+
+  editingId = id;
+  amountEl.value = t.amount;
+  txDateEl.value = new Date(t.date).toISOString().slice(0,10);
+  corePctEl.value = t.corePct;
+  satPctEl.value = t.satPct;
+
+  // Sempre 3 righe per blocco, anche se in fase di aggiunta ne erano state
+  // valorizzate solo alcune: le mancanti restano vuote (col placeholder)
+  // e percentuale 0, così restano modificabili/aggiungibili.
+  function padToThree(savedSub){
+    const names = [], pcts = [];
+    for (let i = 0; i < 3; i++){
+      const entry = (savedSub || [])[i];
+      names.push(entry ? entry.name : '');
+      pcts.push(entry ? entry.pct : 0);
+    }
+    return { names, pcts };
+  }
+  const coreData = padToThree(t.coreSub);
+  const satData = padToThree(t.satSub);
+  buildRows('coreRows', coreNamesDefault, coreData.pcts, coreData.names);
+  buildRows('satRows', satNamesDefault, satData.pcts, satData.names);
+
+  updateSplitUI();
+  updateSubTotals();
+
+  document.getElementById('editBanner').style.display = 'flex';
+  addBtn.textContent = 'Salva modifiche';
+  addBtn.classList.add('editing');
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+async function init(){
+  txDateEl.value = todayISODate();
+
+  // Seleziona tutto il contenuto dei campi numerici al focus/tap, così
+  // digitare sostituisce subito il valore invece di accodarsi ad esso
+  // (evita che "0" + "15" digitato diventi "015"/"150").
+  document.body.addEventListener('focusin', (e) => {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'number'){
+      setTimeout(() => e.target.select(), 0);
+    }
+  });
+
+  const savedNames = await loadBlockNames();
+  buildRows('coreRows', coreNamesDefault, [], (savedNames && savedNames.core) ? savedNames.core : []);
+  buildRows('satRows', satNamesDefault, [], (savedNames && savedNames.satellite) ? savedNames.satellite : []);
+
+  document.getElementById('coreRows').addEventListener('focusout', (e) => {
+    if (e.target.classList.contains('sub-name')) saveBlockNames();
+  });
+  document.getElementById('satRows').addEventListener('focusout', (e) => {
+    if (e.target.classList.contains('sub-name')) saveBlockNames();
+  });
+
+  updateSplitUI();
+  updateSubTotals();
+  loadTransactions();
+}
+init();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js');
+    });
+  }
+</script>
+</body>
+</html>
