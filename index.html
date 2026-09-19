@@ -181,7 +181,7 @@
     background:none; color: var(--danger); padding: 4px 8px; font-size:12px;
   }
 
-  .portfolio-section{ margin-top: 34px; }
+  .portfolio-section{ margin-top: 26px; }
   .portfolio-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 20px; }
   .portfolio-head h2{
     font-family:'Fraunces', serif; font-weight:500; font-size: 22px; margin:0;
@@ -193,54 +193,58 @@
   }
 
   .charts-row{
-    display:flex; gap: 28px; flex-wrap: wrap;
+    display:flex; gap: 20px; flex-wrap: wrap;
   }
-  .charts-row + .charts-row{ margin-top: 18px; }
+  .charts-row + .charts-row{ margin-top: 14px; }
   .chart-panel{
     flex: 1 1 300px;
+    min-width: 0;
     background: var(--panel-2);
     border: 1px solid var(--border);
     border-radius: 9px;
-    padding: 18px 20px 20px;
+    padding: 16px 18px 18px;
   }
-  .chart-panel-compact{
-    flex: 1 1 220px;
-    padding: 14px 16px 16px;
-  }
-  .chart-panel-compact .chart-legend-wrap{ flex-direction: column; align-items: flex-start; gap: 12px; }
-  .chart-panel-compact .legend{ width: 100%; }
-  .chart-panel-compact .legend-row{ font-size: 12px; padding: 5px 0; }
-  .chart-panel-compact .lval{ width: 76px; }
 
-  .composition-split{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .composition-col{ display:flex; flex-direction:column; align-items:center; }
+  .composition-split{ display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; }
+  .composition-col{ display:flex; flex-direction:column; align-items:center; min-width: 0; }
   .composition-col-title{
     font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted);
     text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px;
   }
-  .composition-col .legend{ width: 100%; margin-top: 10px; }
-  .composition-col .legend-row{ font-size: 11.5px; padding: 5px 0; gap: 6px; }
-  .composition-col .lpct{ width: 34px; }
-  .composition-col .lval{ width: 62px; }
+  .composition-col .legend{ margin-top: 10px; }
+  .legend-row-stacked{
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .legend-row-stacked:last-child{ border-bottom: none; }
+  .legend-row-stacked .lr-top{
+    display:flex; align-items:flex-start; gap: 7px; font-size: 13px;
+  }
+  .legend-row-stacked .dot{ flex: 0 0 auto; margin-top: 4px; }
+  .legend-row-stacked .lname{ flex:1; min-width: 0; overflow-wrap: break-word; line-height: 1.3; }
+  .legend-row-stacked .lr-bottom{
+    display:flex; gap: 14px; margin-top: 4px; padding-left: 15px;
+    font-family:'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--text-muted);
+  }
+
   .chart-panel-title{
     font-size: 12px; color: var(--text-muted);
     font-family:'IBM Plex Mono', monospace;
     margin-bottom: 14px;
   }
   .chart-legend-wrap{
-    display:flex; gap: 22px; align-items:center; flex-wrap: wrap;
+    display:flex; flex-direction: column; align-items:center; gap: 16px;
   }
   .donut-holder{ flex: 0 0 auto; }
-  .legend{ flex: 1 1 180px; min-width: 170px; }
+  .legend{ width: 100%; min-width: 0; }
   .legend-row{
-    display:flex; align-items:center; gap:10px; padding: 7px 0;
+    display:flex; align-items:flex-start; gap:8px; padding: 8px 0;
     border-bottom: 1px solid var(--border); font-size: 13.5px;
   }
   .legend-row:last-child{ border-bottom:none; }
-  .legend-row .dot{ flex:0 0 auto; }
-  .legend-row .lname{ flex:1; }
-  .legend-row .lpct{ font-family:'IBM Plex Mono', monospace; color: var(--text-muted); width: 46px; text-align:right; }
-  .legend-row .lval{ font-family:'IBM Plex Mono', monospace; width: 90px; text-align:right; }
+  .legend-row .dot{ flex:0 0 auto; margin-top: 5px; }
+  .legend-row .lname{ flex:1; min-width: 0; overflow-wrap: break-word; line-height: 1.35; }
+  .legend-row .lpct{ font-family:'IBM Plex Mono', monospace; color: var(--text-muted); flex: 0 0 auto; width: 42px; text-align:right; }
+  .legend-row .lval{ font-family:'IBM Plex Mono', monospace; flex: 0 0 auto; width: 82px; text-align:right; }
 
   .legend-group-title{
     font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted);
@@ -658,7 +662,7 @@ function makeColorForDetail(map){
 }
 
 function buildDualRingDonut(coreCats, coreTotal, satCats, satTotal, colorFn, size){
-  size = size || 220;
+  size = size || 200;
   const cx = size/2, cy = size/2;
   const outerR = size * 0.42, innerR = size * 0.26, sw = size * 0.12;
 
@@ -696,7 +700,7 @@ function buildDualRingDonut(coreCats, coreTotal, satCats, satTotal, colorFn, siz
 
 function buildDonut(categories, total, colorFn, size){
   colorFn = colorFn || colorFor;
-  size = size || 220;
+  size = size || 200;
   const r = size * 0.38, cx = size/2, cy = size/2, sw = size * 0.136;
   const fontBig = size < 200 ? 14 : 19;
   const fontSmall = size < 200 ? 9 : 11;
@@ -749,6 +753,18 @@ function render(){
         <span class="lval">${fmtEuro(c.amount)}</span>
       </div>`).join('');
 
+    const legendHtmlStacked = (list, total, colorFn) => list.map(c => `
+      <div class="legend-row-stacked">
+        <div class="lr-top">
+          <span class="dot" style="background:${colorFn(c)}"></span>
+          <span class="lname">${c.label}</span>
+        </div>
+        <div class="lr-bottom">
+          <span class="lpct">${fmtPct(c.amount/total*100)}</span>
+          <span class="lval">${fmtEuro(c.amount)}</span>
+        </div>
+      </div>`).join('');
+
     const coreOnly = categories.filter(c => c.type === 'core').sort((a,b) => b.amount - a.amount);
     const satOnly = categories.filter(c => c.type === 'satellite').sort((a,b) => b.amount - a.amount);
     const coreOnlyTotal = coreOnly.reduce((a,c) => a + c.amount, 0);
@@ -768,13 +784,13 @@ function render(){
           <div class="composition-split">
             <div class="composition-col">
               <div class="composition-col-title">Core · ${fmtEuro(coreOnlyTotal)}</div>
-              <div class="donut-holder">${buildDonut(coreOnly, coreOnlyTotal, colorForDetail, 130)}</div>
-              <div class="legend">${legendHtml(coreOnly, coreOnlyTotal, colorForDetail)}</div>
+              <div class="donut-holder">${buildDonut(coreOnly, coreOnlyTotal, colorForDetail, 140)}</div>
+              <div class="legend">${legendHtmlStacked(coreOnly, coreOnlyTotal, colorForDetail)}</div>
             </div>
             <div class="composition-col">
               <div class="composition-col-title">Satellite · ${fmtEuro(satOnlyTotal)}</div>
-              <div class="donut-holder">${buildDonut(satOnly, satOnlyTotal, colorForDetail, 130)}</div>
-              <div class="legend">${legendHtml(satOnly, satOnlyTotal, colorForDetail)}</div>
+              <div class="donut-holder">${buildDonut(satOnly, satOnlyTotal, colorForDetail, 140)}</div>
+              <div class="legend">${legendHtmlStacked(satOnly, satOnlyTotal, colorForDetail)}</div>
             </div>
           </div>
         </div>
