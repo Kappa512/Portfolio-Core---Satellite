@@ -170,9 +170,23 @@
   .core-tip strong{ color: var(--text); font-weight: 600; }
 
   .sub-row{
-    display:grid; grid-template-columns: 1fr 76px; gap: 8px; margin-bottom: 8px;
+    display:grid; grid-template-columns: 1fr 56px 84px; gap: 6px; margin-bottom: 8px; align-items: center;
   }
   .sub-row input[type=number]{ text-align: right; }
+  .sub-money{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sub-money.err{ border-color: var(--danger); color: var(--danger); }
 
   .sub-total{
     font-size: 12px; font-family:'IBM Plex Mono', monospace; color: var(--text-muted);
@@ -314,6 +328,7 @@
       <div class="amount-row">
         <label for="amount">Quanto stai investendo (€)</label>
         <input type="number" id="amount" min="0" step="1" placeholder="es. 100">
+        <div class="validation ok" id="amountValidation"></div>
       </div>
       <div class="date-row">
         <label for="txDate">Data</label>
@@ -359,6 +374,7 @@
         <div class="sub-total" id="satSubTotal"></div>
       </div>
     </div>
+    <div class="validation err" id="subMoneyHint" style="display:none;">Modifica una percentuale finché il riquadro accanto non mostra un numero intero.</div>
     <div class="edit-banner" id="editBanner" style="display:none;">
       <span>Stai modificando un investimento esistente.</span>
       <button id="cancelEditBtn">Annulla</button>
@@ -387,6 +403,7 @@ const NAMES_KEY = 'core_satellite_block_names';
 let transactions = [];
 let editingId = null;
 let pendingDeleteId = null;
+let subMoneyAllInteger = true;
 
 const coreNamesDefault = ['ETF azionario globale', 'Oro', 'Obbligazioni'];
 const satNamesDefault = ['Satellite 1', 'Satellite 2', 'Satellite 3'];
@@ -402,10 +419,12 @@ function buildRows(containerId, placeholders, pcts, values){
     row.innerHTML = `
       <input type="text" class="sub-name" data-i="${i}" value="${val}" placeholder="${ph}">
       <input type="number" class="sub-pct" data-i="${i}" min="0" max="100" step="1" value="${pctVal === 0 ? '' : pctVal}" placeholder="0">
+      <div class="sub-money" data-i="${i}">€ 0</div>
     `;
     c.appendChild(row);
   });
   updateSubTotals();
+  updateSubMoney();
 }
 
 function todayISODate(){
@@ -454,7 +473,43 @@ function updateSplitUI(){
       : `Core ${fmtPct(core)} + Satellite ${fmtPct(sat)} — allocazione completa.`;
     splitValidation.className = 'validation ok';
   }
+  updateSubMoney();
   validateAll();
+}
+
+function updateSubMoney(){
+  const amount = parseFloat(amountEl.value) || 0;
+  const corePct = parseFloat(corePctEl.value) || 0;
+  const satPct = parseFloat(satPctEl.value) || 0;
+  const coreAmount = amount * corePct / 100;
+  const satAmount = amount * satPct / 100;
+
+  const fillColumn = (containerId, blockAmount) => {
+    const c = document.getElementById(containerId);
+    if (!c) return true;
+    const pctInputs = [...c.querySelectorAll('.sub-pct')];
+    const moneyEls = [...c.querySelectorAll('.sub-money')];
+    let blockOk = true;
+    pctInputs.forEach((inp, i) => {
+      const pct = parseFloat(inp.value) || 0;
+      const money = blockAmount * pct / 100;
+      const isWhole = Math.abs(money - Math.round(money)) < 0.005;
+      const flagAsError = pct > 0 && !isWhole;
+      if (moneyEls[i]){
+        moneyEls[i].textContent = fmtEuro(money);
+        moneyEls[i].classList.toggle('err', flagAsError);
+      }
+      if (flagAsError) blockOk = false;
+    });
+    return blockOk;
+  };
+
+  const coreOk = fillColumn('coreRows', coreAmount);
+  const satOk = fillColumn('satRows', satAmount);
+  subMoneyAllInteger = coreOk && satOk;
+
+  const hint = document.getElementById('subMoneyHint');
+  if (hint) hint.style.display = subMoneyAllInteger ? 'none' : 'block';
 }
 
 function updateSubTotals(){
@@ -472,6 +527,7 @@ function updateSubTotals(){
     ? `Totale ${fmtPct(satSum)} — supera il 100% del Satellite`
     : `Totale ${fmtPct(satSum)} del blocco Satellite${100-satSum>0.01 ? ' · '+fmtPct(100-satSum)+' non allocato' : ''}`;
   satEl.className = 'sub-total' + (satSum > 100 ? ' err' : '');
+  updateSubMoney();
   validateAll();
 }
 
@@ -481,12 +537,24 @@ function validateAll(){
   const sat = parseFloat(satPctEl.value) || 0;
   const coreSum = readSubRows('coreRows').reduce((a,r) => a + r.pct, 0);
   const satSum = readSubRows('satRows').reduce((a,r) => a + r.pct, 0);
-  const ok = amount > 0 && (core + sat) <= 100 && coreSum <= 100 && satSum <= 100;
+
+  const amountValidation = document.getElementById('amountValidation');
+  const rawAmount = amountEl.value.trim();
+  const isInteger = rawAmount === '' || (Number.isInteger(parseFloat(rawAmount)) && !rawAmount.includes(',') && !rawAmount.includes('.'));
+  if (rawAmount !== '' && !isInteger){
+    amountValidation.textContent = 'Inserisci un numero intero (senza virgola/punto): la tua PAC accetta solo cifre intere.';
+    amountValidation.className = 'validation err';
+  } else {
+    amountValidation.textContent = '';
+    amountValidation.className = 'validation ok';
+  }
+
+  const ok = amount > 0 && isInteger && (core + sat) <= 100 && coreSum <= 100 && satSum <= 100 && subMoneyAllInteger;
   addBtn.disabled = !ok;
 }
 
 [corePctEl, satPctEl].forEach(el => el.addEventListener('input', updateSplitUI));
-amountEl.addEventListener('input', validateAll);
+amountEl.addEventListener('input', () => { updateSubMoney(); validateAll(); });
 document.getElementById('coreRows').addEventListener('input', updateSubTotals);
 document.getElementById('satRows').addEventListener('input', updateSubTotals);
 
