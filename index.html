@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portfolio Core-Satellite</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#14181c">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -116,6 +119,7 @@
   .btn-primary.editing{ background: var(--satellite); }
 
   .tx-actions{ display:flex; gap: 4px; align-items:center; }
+  .confirm-label{ font-size: 11px; color: var(--danger); margin-right: 2px; }
   .btn-edit-link{
     background:none; color: var(--core); padding: 4px 8px; font-size:12px;
   }
@@ -157,11 +161,32 @@
   .dot.core{ background: var(--core); }
   .dot.satellite{ background: var(--satellite); }
   .sub-block-title{ font-size: 13.5px; font-weight: 600; }
+  .core-tip{
+    font-size: 12px; color: var(--text-muted); line-height: 1.55;
+    border-left: 2px solid var(--core-dim);
+    padding: 6px 0 6px 10px;
+    margin-bottom: 14px;
+  }
+  .core-tip strong{ color: var(--text); font-weight: 600; }
 
   .sub-row{
-    display:grid; grid-template-columns: 1fr 76px; gap: 8px; margin-bottom: 8px;
+    display:grid; grid-template-columns: 1fr 56px 84px; gap: 6px; margin-bottom: 8px; align-items: center;
   }
   .sub-row input[type=number]{ text-align: right; }
+  .sub-money{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sub-money.err{ border-color: var(--danger); color: var(--danger); }
 
   .sub-total{
     font-size: 12px; font-family:'IBM Plex Mono', monospace; color: var(--text-muted);
@@ -303,6 +328,7 @@
       <div class="amount-row">
         <label for="amount">Quanto stai investendo (€)</label>
         <input type="number" id="amount" min="0" step="0.01" placeholder="es. 100">
+        <div class="validation ok" id="amountValidation"></div>
       </div>
       <div class="date-row">
         <label for="txDate">Data</label>
@@ -319,11 +345,11 @@
     <div class="split-grid">
       <div class="split-field">
         <div class="pct-label"><span class="tag core">Core</span></div>
-        <input type="number" id="corePct" min="0" max="100" step="1" value="70">
+        <input type="number" id="corePct" min="0" max="100" step="0.01" value="70">
       </div>
       <div class="split-field">
         <div class="pct-label"><span class="tag satellite">Satellite</span></div>
-        <input type="number" id="satellitePct" min="0" max="100" step="1" value="30">
+        <input type="number" id="satellitePct" min="0" max="100" step="0.01" value="30">
       </div>
     </div>
     <div class="bar"><div class="seg core" id="splitBarCore"></div><div class="seg satellite" id="splitBarSat"></div></div>
@@ -338,6 +364,7 @@
     <div class="sub-blocks">
       <div class="sub-block core-block">
         <div class="sub-block-head"><span class="dot core"></span><span class="sub-block-title">Core — 3 blocchi</span></div>
+        <div class="core-tip">Un Core bilanciato indicativamente segue queste proporzioni: <strong>ETF azionario globale 60–70%</strong>, <strong>oro 15–20%</strong>, <strong>obbligazioni 10–20%</strong> del Core.</div>
         <div id="coreRows"></div>
         <div class="sub-total" id="coreSubTotal"></div>
       </div>
@@ -374,24 +401,29 @@ const STORAGE_KEY = 'core_satellite_transactions';
 const NAMES_KEY = 'core_satellite_block_names';
 let transactions = [];
 let editingId = null;
+let pendingDeleteId = null;
+let subMoneyAllInteger = true;
 
-const coreNamesDefault = ['Core 1', 'Core 2', 'Core 3'];
+const coreNamesDefault = ['ETF azionario globale', 'Oro', 'Obbligazioni'];
 const satNamesDefault = ['Satellite 1', 'Satellite 2', 'Satellite 3'];
 
-function buildRows(containerId, names, pcts){
+function buildRows(containerId, placeholders, pcts, values){
   const c = document.getElementById(containerId);
   c.innerHTML = '';
-  names.forEach((n, i) => {
+  placeholders.forEach((ph, i) => {
     const row = document.createElement('div');
     row.className = 'sub-row';
     const pctVal = (pcts && pcts[i] !== undefined) ? pcts[i] : 0;
+    const val = (values && values[i]) ? values[i] : '';
     row.innerHTML = `
-      <input type="text" class="sub-name" data-i="${i}" value="${n}" placeholder="Nome blocco">
-      <input type="number" class="sub-pct" data-i="${i}" min="0" max="100" step="1" value="${pctVal === 0 ? '' : pctVal}" placeholder="0">
+      <input type="text" class="sub-name" data-i="${i}" value="${val}" placeholder="${ph}">
+      <input type="number" class="sub-pct" data-i="${i}" min="0" max="100" step="0.01" value="${pctVal === 0 ? '' : pctVal}" placeholder="0">
+      <div class="sub-money" data-i="${i}">€ 0</div>
     `;
     c.appendChild(row);
   });
   updateSubTotals();
+  updateSubMoney();
 }
 
 function todayISODate(){
@@ -419,7 +451,7 @@ function fmtPct(n){
 
 function readSubRows(containerId){
   const c = document.getElementById(containerId);
-  const names = [...c.querySelectorAll('.sub-name')].map(i => i.value.trim());
+  const names = [...c.querySelectorAll('.sub-name')].map(i => i.value.trim() || i.placeholder || '');
   const pcts = [...c.querySelectorAll('.sub-pct')].map(i => parseFloat(i.value) || 0);
   return names.map((name, i) => ({ name, pct: pcts[i] }));
 }
@@ -440,7 +472,33 @@ function updateSplitUI(){
       : `Core ${fmtPct(core)} + Satellite ${fmtPct(sat)} — allocazione completa.`;
     splitValidation.className = 'validation ok';
   }
+  updateSubMoney();
   validateAll();
+}
+
+function updateSubMoney(){
+  const amount = parseFloat(amountEl.value) || 0;
+  const corePct = parseFloat(corePctEl.value) || 0;
+  const satPct = parseFloat(satPctEl.value) || 0;
+  const coreAmount = amount * corePct / 100;
+  const satAmount = amount * satPct / 100;
+
+  const fillColumn = (containerId, blockAmount) => {
+    const c = document.getElementById(containerId);
+    if (!c) return true;
+    const pctInputs = [...c.querySelectorAll('.sub-pct')];
+    const moneyEls = [...c.querySelectorAll('.sub-money')];
+    let blockOk = true;
+    pctInputs.forEach((inp, i) => {
+      const pct = parseFloat(inp.value) || 0;
+      const money = blockAmount * pct / 100;
+});
+    return blockOk;
+  };
+
+  const coreOk = fillColumn('coreRows', coreAmount);
+  const satOk = fillColumn('satRows', satAmount);
+  subMoneyAllInteger = coreOk && satOk;
 }
 
 function updateSubTotals(){
@@ -458,6 +516,7 @@ function updateSubTotals(){
     ? `Totale ${fmtPct(satSum)} — supera il 100% del Satellite`
     : `Totale ${fmtPct(satSum)} del blocco Satellite${100-satSum>0.01 ? ' · '+fmtPct(100-satSum)+' non allocato' : ''}`;
   satEl.className = 'sub-total' + (satSum > 100 ? ' err' : '');
+  updateSubMoney();
   validateAll();
 }
 
@@ -467,12 +526,14 @@ function validateAll(){
   const sat = parseFloat(satPctEl.value) || 0;
   const coreSum = readSubRows('coreRows').reduce((a,r) => a + r.pct, 0);
   const satSum = readSubRows('satRows').reduce((a,r) => a + r.pct, 0);
-  const ok = amount > 0 && (core + sat) <= 100 && coreSum <= 100 && satSum <= 100;
+
+  const amountValidation = document.getElementById('amountValidation');
+const ok = amount > 0 && (core + sat) <= 100 && coreSum <= 100 && satSum <= 100;
   addBtn.disabled = !ok;
 }
 
 [corePctEl, satPctEl].forEach(el => el.addEventListener('input', updateSplitUI));
-amountEl.addEventListener('input', validateAll);
+amountEl.addEventListener('input', () => { updateSubMoney(); validateAll(); });
 document.getElementById('coreRows').addEventListener('input', updateSubTotals);
 document.getElementById('satRows').addEventListener('input', updateSubTotals);
 
@@ -827,15 +888,22 @@ function render(){
       const dateStr = d.toLocaleDateString('it-IT', {day:'2-digit', month:'short', year:'numeric'});
       const coreDetail = (t.coreSub||[]).map(s => `${s.name} ${fmtPct(s.pct)}`).join(', ') || '—';
       const satDetail = (t.satSub||[]).map(s => `${s.name} ${fmtPct(s.pct)}`).join(', ') || '—';
+      const actionsHtml = pendingDeleteId === t.id
+        ? `<span class="tx-actions">
+            <span class="confirm-label">Rimuovere?</span>
+            <button class="btn-danger-link" onclick="removeTx(${t.id})">Conferma</button>
+            <button class="btn-edit-link" onclick="cancelRemoveTx()">Annulla</button>
+          </span>`
+        : `<span class="tx-actions">
+            <button class="btn-edit-link" onclick="editTx(${t.id})">Modifica</button>
+            <button class="btn-danger-link" onclick="requestRemoveTx(${t.id})">Rimuovi</button>
+          </span>`;
       return `
         <div class="tx">
           <div class="tx-top">
             <span class="tx-amount">${fmtEuro(t.amount)}</span>
             <span class="tx-date">${dateStr}</span>
-            <span class="tx-actions">
-              <button class="btn-edit-link" onclick="editTx(${t.id})">Modifica</button>
-              <button class="btn-danger-link" onclick="removeTx(${t.id})">Rimuovi</button>
-            </span>
+            ${actionsHtml}
           </div>
           <div class="tx-detail">
             Core ${fmtPct(t.corePct)} (${coreDetail}) · Satellite ${fmtPct(t.satPct)} (${satDetail})
@@ -846,9 +914,20 @@ function render(){
   }
 }
 
+window.requestRemoveTx = function(id){
+  pendingDeleteId = id;
+  render();
+};
+
+window.cancelRemoveTx = function(){
+  pendingDeleteId = null;
+  render();
+};
+
 window.removeTx = async function(id){
+  pendingDeleteId = null;
   if (editingId === id) resetFormAfterSave();
-  transactions = transactions.filter(t => t.id !== id);
+  transactions = transactions.filter(tx => tx.id !== id);
   await saveTransactions();
   render();
 };
@@ -864,21 +943,21 @@ window.editTx = function(id){
   satPctEl.value = t.satPct;
 
   // Sempre 3 righe per blocco, anche se in fase di aggiunta ne erano state
-  // valorizzate solo alcune: le mancanti vengono riempite con un nome di
-  // default e percentuale 0, così restano modificabili/aggiungibili.
-  function padToThree(savedSub, defaults){
+  // valorizzate solo alcune: le mancanti restano vuote (col placeholder)
+  // e percentuale 0, così restano modificabili/aggiungibili.
+  function padToThree(savedSub){
     const names = [], pcts = [];
     for (let i = 0; i < 3; i++){
       const entry = (savedSub || [])[i];
-      names.push(entry ? entry.name : defaults[i]);
+      names.push(entry ? entry.name : '');
       pcts.push(entry ? entry.pct : 0);
     }
     return { names, pcts };
   }
-  const coreData = padToThree(t.coreSub, coreNamesDefault);
-  const satData = padToThree(t.satSub, satNamesDefault);
-  buildRows('coreRows', coreData.names, coreData.pcts);
-  buildRows('satRows', satData.names, satData.pcts);
+  const coreData = padToThree(t.coreSub);
+  const satData = padToThree(t.satSub);
+  buildRows('coreRows', coreNamesDefault, coreData.pcts, coreData.names);
+  buildRows('satRows', satNamesDefault, satData.pcts, satData.names);
 
   updateSplitUI();
   updateSubTotals();
@@ -903,8 +982,8 @@ async function init(){
   });
 
   const savedNames = await loadBlockNames();
-  buildRows('coreRows', (savedNames && savedNames.core && savedNames.core.length) ? savedNames.core : coreNamesDefault);
-  buildRows('satRows', (savedNames && savedNames.satellite && savedNames.satellite.length) ? savedNames.satellite : satNamesDefault);
+  buildRows('coreRows', coreNamesDefault, [], (savedNames && savedNames.core) ? savedNames.core : []);
+  buildRows('satRows', satNamesDefault, [], (savedNames && savedNames.satellite) ? savedNames.satellite : []);
 
   document.getElementById('coreRows').addEventListener('focusout', (e) => {
     if (e.target.classList.contains('sub-name')) saveBlockNames();
@@ -918,6 +997,13 @@ async function init(){
   loadTransactions();
 }
 init();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js');
+    });
+  }
 </script>
 </body>
 </html>
