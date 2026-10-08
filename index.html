@@ -492,7 +492,8 @@ function updateSubMoney(){
     pctInputs.forEach((inp, i) => {
       const pct = parseFloat(inp.value) || 0;
       const money = blockAmount * pct / 100;
-});
+    moneyEls[i].textContent = fmtEuro(money);
+    });
     return blockOk;
   };
 
