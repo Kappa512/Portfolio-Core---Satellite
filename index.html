@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portfolio Core-Satellite</title>
-<link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#14181c">
-<link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -119,7 +116,6 @@
   .btn-primary.editing{ background: var(--satellite); }
 
   .tx-actions{ display:flex; gap: 4px; align-items:center; }
-  .confirm-label{ font-size: 11px; color: var(--danger); margin-right: 2px; }
   .btn-edit-link{
     background:none; color: var(--core); padding: 4px 8px; font-size:12px;
   }
@@ -161,32 +157,11 @@
   .dot.core{ background: var(--core); }
   .dot.satellite{ background: var(--satellite); }
   .sub-block-title{ font-size: 13.5px; font-weight: 600; }
-  .core-tip{
-    font-size: 12px; color: var(--text-muted); line-height: 1.55;
-    border-left: 2px solid var(--core-dim);
-    padding: 6px 0 6px 10px;
-    margin-bottom: 14px;
-  }
-  .core-tip strong{ color: var(--text); font-weight: 600; }
 
   .sub-row{
-    display:grid; grid-template-columns: 1fr 56px 84px; gap: 6px; margin-bottom: 8px; align-items: center;
+    display:grid; grid-template-columns: 1fr 76px; gap: 8px; margin-bottom: 8px;
   }
   .sub-row input[type=number]{ text-align: right; }
-  .sub-money{
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 10px 10px;
-    font-family:'IBM Plex Mono', monospace;
-    font-size: 13px;
-    color: var(--text-muted);
-    text-align: right;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .sub-money.err{ border-color: var(--danger); color: var(--danger); }
 
   .sub-total{
     font-size: 12px; font-family:'IBM Plex Mono', monospace; color: var(--text-muted);
@@ -303,6 +278,28 @@
   .tx-detail{ color: var(--text-muted); font-size: 12.5px; line-height:1.6; }
 
   .footer-actions{ text-align:center; margin-top: 30px; }
+  .mode-switch{display:flex;gap:8px;align-items:center;margin:0 0 16px;flex-wrap:wrap}
+  .mode-switch button{padding:8px 13px;background:var(--panel-2);border:1px solid var(--border);color:var(--text-muted);font-size:12px}
+  .mode-switch button.active{background:var(--core-dim);border-color:var(--core);color:#d8eee9}
+  .sub-row{grid-template-columns:minmax(0,1fr) 86px;}
+  .sub-row .sub-euro{grid-column:1/-1;text-align:right;font:11px 'IBM Plex Mono',monospace;color:var(--text-muted);margin-top:-5px;margin-bottom:3px}
+  .sub-row input[type=number]{min-width:0}
+  .block-total-euro{font:12px 'IBM Plex Mono',monospace;margin-top:5px;color:var(--text)}
+  .allocation-summary{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;padding:12px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;font:12px 'IBM Plex Mono',monospace}
+  .allocation-summary strong{font-weight:600}
+  .allocation-summary .core-val{color:var(--core)} .allocation-summary .sat-val{color:var(--satellite)}
+  .history-tools{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+  .history-tools label{font-size:11px}
+  .history-month{border:1px solid var(--border);border-radius:9px;background:var(--panel);margin-bottom:10px;overflow:hidden}
+  .history-month summary{cursor:pointer;list-style:none;padding:13px 16px;display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px}
+  .history-month summary::-webkit-details-marker{display:none}
+  .history-month summary:after{content:'＋';color:var(--text-muted);margin-left:auto}
+  .history-month[open] summary:after{content:'−'}
+  .month-meta{color:var(--text-muted);font:11px 'IBM Plex Mono',monospace}
+  .month-items{padding:0 10px 8px}
+  .month-items .tx{margin-bottom:8px}
+  .history-empty{padding:18px;text-align:center;color:var(--text-muted);font-size:13px}
+  @media(max-width:620px){.history-tools{grid-template-columns:1fr 1fr}.history-tools .search-field{grid-column:1/-1}}
 </style>
 </head>
 <body>
@@ -328,7 +325,6 @@
       <div class="amount-row">
         <label for="amount">Quanto stai investendo (€)</label>
         <input type="number" id="amount" min="0" step="0.01" placeholder="es. 100">
-        <div class="validation ok" id="amountValidation"></div>
       </div>
       <div class="date-row">
         <label for="txDate">Data</label>
@@ -345,11 +341,11 @@
     <div class="split-grid">
       <div class="split-field">
         <div class="pct-label"><span class="tag core">Core</span></div>
-        <input type="number" id="corePct" min="0" max="100" step="0.01" value="70">
+        <input type="number" id="corePct" min="0" max="100" step="1" value="70">
       </div>
       <div class="split-field">
         <div class="pct-label"><span class="tag satellite">Satellite</span></div>
-        <input type="number" id="satellitePct" min="0" max="100" step="0.01" value="30">
+        <input type="number" id="satellitePct" min="0" max="100" step="1" value="30">
       </div>
     </div>
     <div class="bar"><div class="seg core" id="splitBarCore"></div><div class="seg satellite" id="splitBarSat"></div></div>
@@ -361,10 +357,14 @@
       <span class="step-num">03</span>
       <span class="step-title">Allocazione dei blocchi</span>
     </div>
+    <div class="mode-switch" aria-label="Modalità di allocazione dei blocchi">
+      <span style="font-size:12px;color:var(--text-muted)">Ripartisci i singoli blocchi in:</span>
+      <button type="button" id="modePct" class="active">Percentuale %</button>
+      <button type="button" id="modeEuro">Importi €</button>
+    </div>
     <div class="sub-blocks">
       <div class="sub-block core-block">
         <div class="sub-block-head"><span class="dot core"></span><span class="sub-block-title">Core — 3 blocchi</span></div>
-        <div class="core-tip">Un Core bilanciato indicativamente segue queste proporzioni: <strong>ETF azionario globale 60–70%</strong>, <strong>oro 15–20%</strong>, <strong>obbligazioni 10–20%</strong> del Core.</div>
         <div id="coreRows"></div>
         <div class="sub-total" id="coreSubTotal"></div>
       </div>
@@ -373,6 +373,12 @@
         <div id="satRows"></div>
         <div class="sub-total" id="satSubTotal"></div>
       </div>
+    </div>
+    <div class="allocation-summary" id="allocationSummary">
+      <span class="core-val">Core: <strong id="coreEuroTotal">€ 0,00</strong></span>
+      <span class="sat-val">Satellite: <strong id="satEuroTotal">€ 0,00</strong></span>
+      <span>Totale allocato: <strong id="allocatedEuroTotal">€ 0,00</strong></span>
+      <span id="allocationBalance">Inserisci l'importo</span>
     </div>
     <div class="edit-banner" id="editBanner" style="display:none;">
       <span>Stai modificando un investimento esistente.</span>
@@ -391,6 +397,12 @@
 
   <div class="history" id="historyWrap" style="display:none;">
     <h3>Storico investimenti</h3>
+    <div class="history-tools">
+      <div class="search-field"><label for="historySearch">Ricerca libera</label><input type="text" id="historySearch" placeholder="Cerca importo, strumento, data..."></div>
+      <div><label for="historyYear">Anno</label><select id="historyYear"><option value="">Tutti</option></select></div>
+      <div><label for="historyMonth">Mese</label><select id="historyMonth"><option value="">Tutti</option></select></div>
+      <div><label for="historyDay">Giorno</label><select id="historyDay"><option value="">Tutti</option></select></div>
+    </div>
     <div id="historyList"></div>
   </div>
 
@@ -401,31 +413,29 @@ const STORAGE_KEY = 'core_satellite_transactions';
 const NAMES_KEY = 'core_satellite_block_names';
 let transactions = [];
 let editingId = null;
-let pendingDeleteId = null;
-let subMoneyAllInteger = true;
+let allocationMode = 'pct';
 
-const coreNamesDefault = ['ETF azionario globale', 'Oro', 'Obbligazioni'];
+const coreNamesDefault = ['Core 1', 'Core 2', 'Core 3'];
 const satNamesDefault = ['Satellite 1', 'Satellite 2', 'Satellite 3'];
 
-function buildRows(containerId, placeholders, pcts, values){
+function buildRows(containerId, names, pcts){
   const c = document.getElementById(containerId);
   c.innerHTML = '';
-  placeholders.forEach((ph, i) => {
+  names.forEach((n, i) => {
     const row = document.createElement('div');
     row.className = 'sub-row';
     const pctVal = (pcts && pcts[i] !== undefined) ? pcts[i] : 0;
-    const val = (values && values[i]) ? values[i] : '';
     row.innerHTML = `
-      <input type="text" class="sub-name" data-i="${i}" value="${val}" placeholder="${ph}">
-      <input type="number" class="sub-pct" data-i="${i}" min="0" max="100" step="0.01" value="${pctVal === 0 ? '' : pctVal}" placeholder="0">
-      <div class="sub-money" data-i="${i}">€ 0</div>
+      <input type="text" class="sub-name" data-i="${i}" value="${escapeAttr(n)}" placeholder="Nome blocco">
+      <input type="number" class="sub-pct" data-i="${i}" min="0" step="0.01" value="${pctVal === 0 ? '' : pctVal}" placeholder="0">
+      <div class="sub-euro"></div>
     `;
     c.appendChild(row);
   });
   updateSubTotals();
-  updateSubMoney();
 }
 
+function escapeAttr(value){return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function todayISODate(){
   const d = new Date();
   const tz = d.getTimezoneOffset();
@@ -451,7 +461,7 @@ function fmtPct(n){
 
 function readSubRows(containerId){
   const c = document.getElementById(containerId);
-  const names = [...c.querySelectorAll('.sub-name')].map(i => i.value.trim() || i.placeholder || '');
+  const names = [...c.querySelectorAll('.sub-name')].map(i => i.value.trim());
   const pcts = [...c.querySelectorAll('.sub-pct')].map(i => parseFloat(i.value) || 0);
   return names.map((name, i) => ({ name, pct: pcts[i] }));
 }
@@ -472,71 +482,98 @@ function updateSplitUI(){
       : `Core ${fmtPct(core)} + Satellite ${fmtPct(sat)} — allocazione completa.`;
     splitValidation.className = 'validation ok';
   }
-  updateSubMoney();
   validateAll();
 }
 
-function updateSubMoney(){
-  const amount = parseFloat(amountEl.value) || 0;
-  const corePct = parseFloat(corePctEl.value) || 0;
-  const satPct = parseFloat(satPctEl.value) || 0;
-  const coreAmount = amount * corePct / 100;
-  const satAmount = amount * satPct / 100;
-
-  const fillColumn = (containerId, blockAmount) => {
-    const c = document.getElementById(containerId);
-    if (!c) return true;
-    const pctInputs = [...c.querySelectorAll('.sub-pct')];
-    const moneyEls = [...c.querySelectorAll('.sub-money')];
-    let blockOk = true;
-    pctInputs.forEach((inp, i) => {
-      const pct = parseFloat(inp.value) || 0;
-      const money = blockAmount * pct / 100;
-    moneyEls[i].textContent = fmtEuro(money);
-    });
-    return blockOk;
-  };
-
-  const coreOk = fillColumn('coreRows', coreAmount);
-  const satOk = fillColumn('satRows', satAmount);
-  subMoneyAllInteger = coreOk && satOk;
+function getAllocationNumbers(){
+  const amount = Math.max(0, parseFloat(amountEl.value) || 0);
+  const coreRows = readSubRows('coreRows'), satRows = readSubRows('satRows');
+  const coreTotal = amount * Math.max(0, parseFloat(corePctEl.value) || 0) / 100;
+  const satTotal = amount * Math.max(0, parseFloat(satPctEl.value) || 0) / 100;
+  const coreAllocated = allocationMode === 'pct'
+    ? coreTotal * coreRows.reduce((a,r)=>a+r.pct,0) / 100
+    : coreRows.reduce((a,r)=>a+r.pct,0);
+  const satAllocated = allocationMode === 'pct'
+    ? satTotal * satRows.reduce((a,r)=>a+r.pct,0) / 100
+    : satRows.reduce((a,r)=>a+r.pct,0);
+  return {amount, coreRows, satRows, coreTotal, satTotal, coreAllocated, satAllocated,
+    allocated:coreAllocated+satAllocated, targetAllocated:coreTotal+satTotal};
 }
-
 function updateSubTotals(){
-  const coreRows = readSubRows('coreRows');
-  const satRows = readSubRows('satRows');
-  const coreSum = coreRows.reduce((a,r) => a + r.pct, 0);
-  const satSum = satRows.reduce((a,r) => a + r.pct, 0);
-  const coreEl = document.getElementById('coreSubTotal');
-  const satEl = document.getElementById('satSubTotal');
-  coreEl.textContent = coreSum > 100
-    ? `Totale ${fmtPct(coreSum)} — supera il 100% del Core`
-    : `Totale ${fmtPct(coreSum)} del blocco Core${100-coreSum>0.01 ? ' · '+fmtPct(100-coreSum)+' non allocato' : ''}`;
-  coreEl.className = 'sub-total' + (coreSum > 100 ? ' err' : '');
-  satEl.textContent = satSum > 100
-    ? `Totale ${fmtPct(satSum)} — supera il 100% del Satellite`
-    : `Totale ${fmtPct(satSum)} del blocco Satellite${100-satSum>0.01 ? ' · '+fmtPct(100-satSum)+' non allocato' : ''}`;
-  satEl.className = 'sub-total' + (satSum > 100 ? ' err' : '');
-  updateSubMoney();
+  const d = getAllocationNumbers();
+  const coreSum = d.coreRows.reduce((a,r)=>a+r.pct,0), satSum = d.satRows.reduce((a,r)=>a+r.pct,0);
+  const coreEl = document.getElementById('coreSubTotal'), satEl = document.getElementById('satSubTotal');
+  if(allocationMode === 'pct'){
+    coreEl.textContent = coreSum > 100 ? `Totale ${fmtPct(coreSum)} — supera il 100% del Core` : `Totale ${fmtPct(coreSum)} del Core${100-coreSum>0.01 ? ' · '+fmtPct(100-coreSum)+' non allocato' : ''}`;
+    satEl.textContent = satSum > 100 ? `Totale ${fmtPct(satSum)} — supera il 100% del Satellite` : `Totale ${fmtPct(satSum)} del Satellite${100-satSum>0.01 ? ' · '+fmtPct(100-satSum)+' non allocato' : ''}`;
+  } else {
+    coreEl.textContent = `Acquisti Core: ${fmtEuro(d.coreAllocated)} / ${fmtEuro(d.coreTotal)}`;
+    satEl.textContent = `Acquisti Satellite: ${fmtEuro(d.satAllocated)} / ${fmtEuro(d.satTotal)}`;
+  }
+  coreEl.className = 'sub-total' + ((allocationMode==='pct' && coreSum>100) || (allocationMode==='euro' && d.coreAllocated>d.coreTotal+0.005) ? ' err':'');
+  satEl.className = 'sub-total' + ((allocationMode==='pct' && satSum>100) || (allocationMode==='euro' && d.satAllocated>d.satTotal+0.005) ? ' err':'');
+  ['coreRows','satRows'].forEach((id,idx)=>{
+    const rows = idx===0 ? d.coreRows : d.satRows;
+    const blockTotal = idx===0 ? d.coreTotal : d.satTotal;
+    document.querySelectorAll(`#${id} .sub-euro`).forEach((el,i)=>{
+      const value = rows[i]?.pct || 0;
+      const euro = allocationMode==='pct' ? blockTotal*value/100 : value;
+      el.textContent = allocationMode==='pct' ? `≈ ${fmtEuro(euro)}` : `${blockTotal>0 ? fmtPct(euro/blockTotal*100) : '—'} del blocco`;
+    });
+  });
+  document.getElementById('coreEuroTotal').textContent = fmtEuro(d.coreAllocated);
+  document.getElementById('satEuroTotal').textContent = fmtEuro(d.satAllocated);
+  document.getElementById('allocatedEuroTotal').textContent = fmtEuro(d.allocated);
+  const diff = d.targetAllocated-d.allocated, balance = document.getElementById('allocationBalance');
+  if(d.amount<=0){balance.textContent='Inserisci l’importo';balance.style.color='var(--text-muted)';}
+  else if(Math.abs(diff)<0.005){balance.textContent='Budget Core/Satellite riconciliato';balance.style.color='var(--core)';}
+  else if(diff>0){balance.textContent=`Mancano ${fmtEuro(diff)} rispetto al budget Core/Satellite`;balance.style.color='var(--satellite)';}
+  else {balance.textContent=`Eccedenza ${fmtEuro(Math.abs(diff))} rispetto al budget Core/Satellite`;balance.style.color='var(--danger)';}
   validateAll();
 }
-
 function validateAll(){
-  const amount = parseFloat(amountEl.value) || 0;
-  const core = parseFloat(corePctEl.value) || 0;
-  const sat = parseFloat(satPctEl.value) || 0;
-  const coreSum = readSubRows('coreRows').reduce((a,r) => a + r.pct, 0);
-  const satSum = readSubRows('satRows').reduce((a,r) => a + r.pct, 0);
-
-  const amountValidation = document.getElementById('amountValidation');
-const ok = amount > 0 && (core + sat) <= 100 && coreSum <= 100 && satSum <= 100;
-  addBtn.disabled = !ok;
+  const d=getAllocationNumbers();
+  const core = parseFloat(corePctEl.value)||0, sat=parseFloat(satPctEl.value)||0;
+  const coreSum=d.coreRows.reduce((a,r)=>a+r.pct,0), satSum=d.satRows.reduce((a,r)=>a+r.pct,0);
+  const splitOK = core>=0 && sat>=0 && core+sat<=100.0001;
+  const blocksOK = allocationMode==='pct'
+    ? coreSum<=100.0001 && satSum<=100.0001
+    : d.coreAllocated<=d.coreTotal+0.005 && d.satAllocated<=d.satTotal+0.005 && Math.abs(d.coreAllocated-d.coreTotal)<0.005 && Math.abs(d.satAllocated-d.satTotal)<0.005;
+  addBtn.disabled = !(d.amount>0 && splitOK && blocksOK);
 }
-
-[corePctEl, satPctEl].forEach(el => el.addEventListener('input', updateSplitUI));
-amountEl.addEventListener('input', () => { updateSubMoney(); validateAll(); });
-document.getElementById('coreRows').addEventListener('input', updateSubTotals);
-document.getElementById('satRows').addEventListener('input', updateSubTotals);
+function setAllocationMode(next){
+  if(next===allocationMode)return;
+  const amount=Math.max(0,parseFloat(amountEl.value)||0);
+  const cp=Math.max(0,parseFloat(corePctEl.value)||0), sp=Math.max(0,parseFloat(satPctEl.value)||0);
+  const coreBudget=amount*cp/100, satBudget=amount*sp/100;
+  const coreRows=readSubRows('coreRows'), satRows=readSubRows('satRows');
+  if(next==='euro'){
+    coreRows.forEach(r=>r.pct=Number((coreBudget*r.pct/100).toFixed(2)));
+    satRows.forEach(r=>r.pct=Number((satBudget*r.pct/100).toFixed(2)));
+  } else {
+    coreRows.forEach(r=>r.pct=coreBudget>0?r.pct/coreBudget*100:0);
+    satRows.forEach(r=>r.pct=satBudget>0?r.pct/satBudget*100:0);
+  }
+  allocationMode=next;
+  document.getElementById('modePct').classList.toggle('active',next==='pct');
+  document.getElementById('modeEuro').classList.toggle('active',next==='euro');
+  document.querySelectorAll('.sub-pct').forEach(el=>{
+    const rows=el.closest('#coreRows')?coreRows:satRows;
+    const value=rows[Number(el.dataset.i)]?.pct||0;
+    el.value=value?Number(value.toFixed(2)):'';
+    el.step='0.01';
+    el.removeAttribute('max');
+    el.placeholder=next==='pct'?'%':'€';
+    el.setAttribute('aria-label',next==='pct'?'Percentuale del blocco':'Importo in euro');
+  });
+  updateSubTotals();
+}
+document.getElementById('modePct').addEventListener('click',()=>setAllocationMode('pct'));
+document.getElementById('modeEuro').addEventListener('click',()=>setAllocationMode('euro'));
+[corePctEl,satPctEl].forEach(el=>el.addEventListener('input',()=>{updateSplitUI();updateSubTotals();}));
+amountEl.addEventListener('input',()=>{updateSubTotals();updateSplitUI();});
+document.getElementById('coreRows').addEventListener('input',updateSubTotals);
+document.getElementById('satRows').addEventListener('input',updateSubTotals);
 
 const hasClaudeStorage = () => typeof window.storage !== 'undefined' && window.storage;
 
@@ -614,10 +651,15 @@ function resetFormAfterSave(){
 
 addBtn.addEventListener('click', async () => {
   const amount = parseFloat(amountEl.value) || 0;
-  const corePct = parseFloat(corePctEl.value) || 0;
-  const satPct = parseFloat(satPctEl.value) || 0;
-  const coreSub = readSubRows('coreRows').filter(r => r.pct > 0 && r.name);
-  const satSub = readSubRows('satRows').filter(r => r.pct > 0 && r.name);
+  let corePct = parseFloat(corePctEl.value) || 0;
+  let satPct = parseFloat(satPctEl.value) || 0;
+  let coreSub = readSubRows('coreRows').filter(r => r.pct > 0 && r.name);
+  let satSub = readSubRows('satRows').filter(r => r.pct > 0 && r.name);
+  if(allocationMode==='euro'){
+    const coreBudget=amount*corePct/100, satBudget=amount*satPct/100;
+    coreSub=coreSub.map(r=>({...r,pct:coreBudget>0?r.pct/coreBudget*100:0}));
+    satSub=satSub.map(r=>({...r,pct:satBudget>0?r.pct/satBudget*100:0}));
+  }
   const dateISO = txDateEl.value ? dateInputToISO(txDateEl.value) : new Date().toISOString();
 
   if (editingId !== null){
@@ -803,6 +845,44 @@ function buildDonut(categories, total, colorFn, size){
     </svg>`;
 }
 
+function renderHistory(){
+  const wrap=document.getElementById('historyWrap'), list=document.getElementById('historyList');
+  if(!transactions.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  const yearEl=document.getElementById('historyYear'), monthEl=document.getElementById('historyMonth'), dayEl=document.getElementById('historyDay');
+  const years=[...new Set(transactions.map(t=>new Date(t.date).getFullYear()))].sort((a,b)=>b-a);
+  const keepYear=yearEl.value, keepMonth=monthEl.value, keepDay=dayEl.value;
+  yearEl.innerHTML='<option value="">Tutti</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  if(years.map(String).includes(keepYear))yearEl.value=keepYear;
+  const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  monthEl.innerHTML='<option value="">Tutti</option>'+months.map((m,i)=>`<option value="${i+1}">${m}</option>`).join(''); if(keepMonth)monthEl.value=keepMonth;
+  const days=Array.from({length:31},(_,i)=>i+1);dayEl.innerHTML='<option value="">Tutti</option>'+days.map(d=>`<option value="${d}">${String(d).padStart(2,'0')}</option>`).join('');if(keepDay)dayEl.value=keepDay;
+  const q=(document.getElementById('historySearch').value||'').trim().toLocaleLowerCase('it');
+  const filtered=transactions.filter(t=>{
+    const d=new Date(t.date), y=d.getFullYear(),m=d.getMonth()+1,day=d.getDate();
+    if(yearEl.value && String(y)!==yearEl.value)return false;
+    if(monthEl.value && String(m)!==monthEl.value)return false;
+    if(dayEl.value && String(day)!==dayEl.value)return false;
+    const hay=[fmtEuro(t.amount),t.date,String(y),String(m),String(day),...(t.coreSub||[]).map(x=>x.name),...(t.satSub||[]).map(x=>x.name)].join(' ').toLocaleLowerCase('it');
+    return !q||hay.includes(q);
+  }).sort((a,b)=>new Date(b.date)-new Date(a.date)||b.id-a.id);
+  const groups={}; filtered.forEach(t=>{const d=new Date(t.date),key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;(groups[key] ||= []).push(t);});
+  const keys=Object.keys(groups).sort().reverse();
+  if(!filtered.length){list.innerHTML='<div class="history-empty">Nessun movimento corrisponde ai filtri.</div>';return;}
+  list.innerHTML=keys.map(key=>{
+    const arr=groups[key], [year,month]=key.split('-').map(Number), label=`${months[month-1]} ${year}`, total=arr.reduce((a,t)=>a+t.amount,0);
+    const cards=arr.map(t=>{
+      const d=new Date(t.date),dateStr=d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+      const coreDetail=(t.coreSub||[]).map(x=>`${escapeHtml(x.name)} ${fmtPct(x.pct)}`).join(', ')||'—';
+      const satDetail=(t.satSub||[]).map(x=>`${escapeHtml(x.name)} ${fmtPct(x.pct)}`).join(', ')||'—';
+      return `<div class="tx"><div class="tx-top"><span class="tx-amount">${fmtEuro(t.amount)}</span><span class="tx-date">${dateStr}</span><span class="tx-actions"><button class="btn-edit-link" onclick="editTx(${t.id})">Modifica</button><button class="btn-danger-link" onclick="removeTx(${t.id})">Rimuovi</button></span></div><div class="tx-detail">Core ${fmtPct(t.corePct)} (${coreDetail}) · Satellite ${fmtPct(t.satPct)} (${satDetail})</div></div>`;
+    }).join('');
+    return `<details class="history-month" open><summary><strong>${label}</strong><span class="month-meta">${arr.length} moviment${arr.length===1?'o':'i'} · ${fmtEuro(total)}</span></summary><div class="month-items">${cards}</div></details>`;
+  }).join('');
+}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+['historySearch','historyYear','historyMonth','historyDay'].forEach(id=>document.getElementById(id).addEventListener(id==='historySearch'?'input':'change',renderHistory));
+
 function render(){
   const { totalAmount, categories } = aggregate();
   document.getElementById('totalInvested').textContent = fmtEuro(totalAmount);
@@ -878,57 +958,12 @@ function render(){
       </div>`;
   }
 
-  const historyWrap = document.getElementById('historyWrap');
-  const historyList = document.getElementById('historyList');
-  if (transactions.length === 0){
-    historyWrap.style.display = 'none';
-  } else {
-    historyWrap.style.display = 'block';
-    const items = [...transactions].reverse().map(t => {
-      const d = new Date(t.date);
-      const dateStr = d.toLocaleDateString('it-IT', {day:'2-digit', month:'short', year:'numeric'});
-      const coreDetail = (t.coreSub||[]).map(s => `${s.name} ${fmtPct(s.pct)}`).join(', ') || '—';
-      const satDetail = (t.satSub||[]).map(s => `${s.name} ${fmtPct(s.pct)}`).join(', ') || '—';
-      const actionsHtml = pendingDeleteId === t.id
-        ? `<span class="tx-actions">
-            <span class="confirm-label">Rimuovere?</span>
-            <button class="btn-danger-link" onclick="removeTx(${t.id})">Conferma</button>
-            <button class="btn-edit-link" onclick="cancelRemoveTx()">Annulla</button>
-          </span>`
-        : `<span class="tx-actions">
-            <button class="btn-edit-link" onclick="editTx(${t.id})">Modifica</button>
-            <button class="btn-danger-link" onclick="requestRemoveTx(${t.id})">Rimuovi</button>
-          </span>`;
-      return `
-        <div class="tx">
-          <div class="tx-top">
-            <span class="tx-amount">${fmtEuro(t.amount)}</span>
-            <span class="tx-date">${dateStr}</span>
-            ${actionsHtml}
-          </div>
-          <div class="tx-detail">
-            Core ${fmtPct(t.corePct)} (${coreDetail}) · Satellite ${fmtPct(t.satPct)} (${satDetail})
-          </div>
-        </div>`;
-    }).join('');
-    historyList.innerHTML = items;
-  }
+  renderHistory();
 }
 
-window.requestRemoveTx = function(id){
-  pendingDeleteId = id;
-  render();
-};
-
-window.cancelRemoveTx = function(){
-  pendingDeleteId = null;
-  render();
-};
-
 window.removeTx = async function(id){
-  pendingDeleteId = null;
   if (editingId === id) resetFormAfterSave();
-  transactions = transactions.filter(tx => tx.id !== id);
+  transactions = transactions.filter(t => t.id !== id);
   await saveTransactions();
   render();
 };
@@ -938,27 +973,28 @@ window.editTx = function(id){
   if (!t) return;
 
   editingId = id;
+  if(allocationMode!=='pct') setAllocationMode('pct');
   amountEl.value = t.amount;
   txDateEl.value = new Date(t.date).toISOString().slice(0,10);
   corePctEl.value = t.corePct;
   satPctEl.value = t.satPct;
 
   // Sempre 3 righe per blocco, anche se in fase di aggiunta ne erano state
-  // valorizzate solo alcune: le mancanti restano vuote (col placeholder)
-  // e percentuale 0, così restano modificabili/aggiungibili.
-  function padToThree(savedSub){
+  // valorizzate solo alcune: le mancanti vengono riempite con un nome di
+  // default e percentuale 0, così restano modificabili/aggiungibili.
+  function padToThree(savedSub, defaults){
     const names = [], pcts = [];
     for (let i = 0; i < 3; i++){
       const entry = (savedSub || [])[i];
-      names.push(entry ? entry.name : '');
+      names.push(entry ? entry.name : defaults[i]);
       pcts.push(entry ? entry.pct : 0);
     }
     return { names, pcts };
   }
-  const coreData = padToThree(t.coreSub);
-  const satData = padToThree(t.satSub);
-  buildRows('coreRows', coreNamesDefault, coreData.pcts, coreData.names);
-  buildRows('satRows', satNamesDefault, satData.pcts, satData.names);
+  const coreData = padToThree(t.coreSub, coreNamesDefault);
+  const satData = padToThree(t.satSub, satNamesDefault);
+  buildRows('coreRows', coreData.names, coreData.pcts);
+  buildRows('satRows', satData.names, satData.pcts);
 
   updateSplitUI();
   updateSubTotals();
@@ -983,8 +1019,8 @@ async function init(){
   });
 
   const savedNames = await loadBlockNames();
-  buildRows('coreRows', coreNamesDefault, [], (savedNames && savedNames.core) ? savedNames.core : []);
-  buildRows('satRows', satNamesDefault, [], (savedNames && savedNames.satellite) ? savedNames.satellite : []);
+  buildRows('coreRows', (savedNames && savedNames.core && savedNames.core.length) ? savedNames.core : coreNamesDefault);
+  buildRows('satRows', (savedNames && savedNames.satellite && savedNames.satellite.length) ? savedNames.satellite : satNamesDefault);
 
   document.getElementById('coreRows').addEventListener('focusout', (e) => {
     if (e.target.classList.contains('sub-name')) saveBlockNames();
@@ -998,13 +1034,6 @@ async function init(){
   loadTransactions();
 }
 init();
-</script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js');
-    });
-  }
 </script>
 </body>
 </html>
