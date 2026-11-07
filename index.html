@@ -272,7 +272,7 @@
     padding: 14px 16px; margin-bottom: 10px;
     font-size: 13px;
   }
-  .tx-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .tx-top{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px 10px; margin-bottom:6px; }
   .tx-amount{ font-family:'IBM Plex Mono', monospace; font-size: 15px; }
   .tx-date{ color: var(--text-muted); font-size: 12px; }
   .tx-detail{ color: var(--text-muted); font-size: 12.5px; line-height:1.6; }
@@ -281,11 +281,12 @@
   .mode-switch{display:flex;gap:8px;align-items:center;margin:0 0 16px;flex-wrap:wrap}
   .mode-switch button{padding:8px 13px;background:var(--panel-2);border:1px solid var(--border);color:var(--text-muted);font-size:12px}
   .mode-switch button.active{background:var(--core-dim);border-color:var(--core);color:#d8eee9}
-  .sub-row{grid-template-columns:minmax(0,1fr) 104px 82px;align-items:center;}
+  .sub-row{grid-template-columns:10px minmax(0,1fr) 104px 82px;align-items:center;}
+  .slot-dot{width:10px;height:10px;border-radius:50%;display:block}
   .sub-row .sub-euro{text-align:right;font:11px 'IBM Plex Mono',monospace;color:var(--text-muted);margin:0;white-space:nowrap}
   .split-equivalent{font:12px 'IBM Plex Mono',monospace;color:var(--text-muted)}
   .allocation-hint{font-size:12px;color:var(--text-muted);margin:-7px 0 16px;line-height:1.5}
-  @media(max-width:440px){.sub-row{grid-template-columns:minmax(0,1fr) 92px 70px;gap:6px}.sub-row .sub-euro{font-size:10px}}
+  @media(max-width:440px){.sub-row{grid-template-columns:10px minmax(0,1fr) 92px 70px;gap:6px}.sub-row .sub-euro{font-size:10px}}
   .sub-row input[type=number]{min-width:0}
   .block-total-euro{font:12px 'IBM Plex Mono',monospace;margin-top:5px;color:var(--text)}
   .allocation-summary{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;padding:12px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;font:12px 'IBM Plex Mono',monospace}
@@ -301,6 +302,11 @@
   .month-meta{color:var(--text-muted);font:11px 'IBM Plex Mono',monospace}
   .month-items{padding:0 10px 8px}
   .month-items .tx{margin-bottom:8px}
+  select{width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:10px 8px;font-family:'Inter',sans-serif;font-size:14px}
+  .mode-switch button.active.sub{background:#4a2a27;border-color:var(--danger);color:#f3d2cd}
+  .btn-primary.subtract{background:var(--danger);color:#fff}
+  .tx-amount.neg{color:var(--danger)}
+  .tx-badge{font:11px 'IBM Plex Mono',monospace;background:#4a2a27;color:#f3d2cd;padding:2px 7px;border-radius:4px;margin-left:8px}
   .history-empty{padding:18px;text-align:center;color:var(--text-muted);font-size:13px}
   @media(max-width:620px){.history-tools{grid-template-columns:1fr 1fr}.history-tools .search-field{grid-column:1/-1}}
 </style>
@@ -312,7 +318,7 @@
     <div class="eyebrow">Gestione portfolio</div>
     <h1><span class="core-word">Core</span> <span class="amp">&amp;</span> <span class="satellite-word">Satellite</span></h1>
     <div class="accent-rule"></div>
-    <p>Registra ogni investimento, suddividilo in euro tra Core e Satellite e assegna gli importi ai singoli strumenti. Le percentuali vengono calcolate automaticamente e il portfolio si aggiorna nel tempo.</p>
+    <p>Registra ogni investimento (o prelievo), suddividilo in euro tra Core e Satellite e assegna gli importi ai singoli strumenti. Le percentuali vengono calcolate automaticamente e il portfolio si aggiorna nel tempo.</p>
     <div class="totalbar">
       <span class="label">Totale investito finora</span>
       <span class="value" id="totalInvested">€ 0</span>
@@ -324,9 +330,13 @@
       <span class="step-num">01</span>
       <span class="step-title">Importo dell'investimento</span>
     </div>
+    <div class="mode-switch" role="group" aria-label="Tipo di movimento">
+      <button type="button" id="modeAdd" class="active">＋ Aggiungi</button>
+      <button type="button" id="modeSub">− Sottrai</button>
+    </div>
     <div class="amount-date-row">
       <div class="amount-row">
-        <label for="amount">Quanto stai investendo (€)</label>
+        <label for="amount" id="amountLabel">Quanto stai investendo (€)</label>
         <input type="text" id="amount" inputmode="decimal" autocomplete="off" placeholder="es. 100,00">
       </div>
       <div class="date-row">
@@ -363,12 +373,12 @@
     <p class="allocation-hint">Inserisci direttamente gli importi in euro. La percentuale corrispondente viene mostrata accanto a ogni blocco.</p>
     <div class="sub-blocks">
       <div class="sub-block core-block">
-        <div class="sub-block-head"><span class="dot core"></span><span class="sub-block-title">Core — 3 blocchi</span></div>
+        <div class="sub-block-head"><span class="dot core"></span><span class="sub-block-title">Core — 6 blocchi</span></div>
         <div id="coreRows"></div>
         <div class="sub-total" id="coreSubTotal"></div>
       </div>
       <div class="sub-block satellite-block">
-        <div class="sub-block-head"><span class="dot satellite"></span><span class="sub-block-title">Satellite — 3 blocchi</span></div>
+        <div class="sub-block-head"><span class="dot satellite"></span><span class="sub-block-title">Satellite — 6 blocchi</span></div>
         <div id="satRows"></div>
         <div class="sub-total" id="satSubTotal"></div>
       </div>
@@ -413,18 +423,30 @@ const STORAGE_KEY = 'core_satellite_transactions';
 const NAMES_KEY = 'core_satellite_block_names';
 let transactions = [];
 let editingId = null;
-const coreNamesDefault = ['Core 1', 'Core 2', 'Core 3'];
-const satNamesDefault = ['Satellite 1', 'Satellite 2', 'Satellite 3'];
+const SLOTS = 6;
+let mode = 'add'; // 'add' = aggiungi importo, 'sub' = sottrai importo
+const coreNamesDefault = ['Core 1', 'Core 2', 'Core 3', 'Core 4', 'Core 5', 'Core 6'];
+const satNamesDefault = ['Satellite 1', 'Satellite 2', 'Satellite 3', 'Satellite 4', 'Satellite 5', 'Satellite 6'];
+// 12 colori tutti diversi: uno per ogni blocco (6 Core + 6 Satellite).
+const corePalette = ['#3fb59f', '#5b9cf0', '#7bbf6a', '#8a7cf0', '#c3d14c', '#45c3dd'];
+const satPalette  = ['#e8b04a', '#ee8a4c', '#e0605a', '#dc72ac', '#b384e0', '#a98a68'];
+const extraPalette = ['#9aa5b1', '#e6d3a3', '#7f9f5a', '#c98f9f', '#6f8fb0', '#b5a0d0'];
+function normalizeNames(arr, defaults){
+  return Array.from({length: SLOTS}, (_, i) =>
+    (arr && arr[i] !== undefined && String(arr[i]).trim() !== '') ? String(arr[i]) : defaults[i]);
+}
 let savedBlockNames = { core: [...coreNamesDefault], satellite: [...satNamesDefault] };
 
 function buildRows(containerId, names, values){
   const c = document.getElementById(containerId);
+  const pal = containerId === 'coreRows' ? corePalette : satPalette;
   c.innerHTML = '';
   names.forEach((n, i) => {
     const row = document.createElement('div');
     row.className = 'sub-row';
     const euroVal = (values && values[i] !== undefined) ? values[i] : 0;
     row.innerHTML = `
+      <span class="slot-dot" style="background:${pal[i % pal.length]}"></span>
       <input type="text" class="sub-name" data-i="${i}" value="${escapeAttr(n)}" placeholder="Nome blocco">
       <input type="text" inputmode="decimal" autocomplete="off" class="sub-pct" data-i="${i}" value="${euroVal === 0 ? '' : euroVal}" placeholder="€" aria-label="Importo in euro">
       <div class="sub-euro">—</div>
@@ -534,28 +556,82 @@ function updateSubTotals(){
   else {balance.textContent=`Eccedenza ${fmtEuro(Math.abs(diff))} rispetto al budget Core/Satellite`;balance.style.color='var(--danger)';}
   validateAll();
 }
+function getBalances(excludeId){
+  const list = transactions.filter(t => t.id !== excludeId);
+  const a = aggregate(list), m = aggregateMacro(list);
+  const bal = { total: a.totalAmount, core: 0, sat: 0, cash: 0, blocks: {} };
+  m.categories.forEach(c => {
+    if (c.type === 'core') bal.core = c.amount;
+    else if (c.type === 'satellite') bal.sat = c.amount;
+    else bal.cash = c.amount;
+  });
+  a.categories.forEach(c => { bal.blocks[c.type + ':' + c.label.toLowerCase()] = c.amount; });
+  return bal;
+}
+function checkSubtract(d){
+  const bal = getBalances(editingId);
+  const pos = n => fmtEuro(Math.max(0, n));
+  if (d.amount > bal.total + 0.005) return `Stai sottraendo più di quanto hai nel portfolio (disponibili ${pos(bal.total)}).`;
+  if (d.coreTotal > bal.core + 0.005) return `Il Core ha solo ${pos(bal.core)} disponibili.`;
+  if (d.satTotal > bal.sat + 0.005) return `Il Satellite ha solo ${pos(bal.sat)} disponibili.`;
+  if (d.amount - d.targetAllocated > bal.cash + 0.005) return `La liquidità disponibile è ${pos(bal.cash)}.`;
+  const sums = {}, names = {};
+  [['core', d.coreRows], ['satellite', d.satRows]].forEach(([type, rows]) => rows.forEach(r => {
+    if (r.pct > 0.005 && r.name){
+      const k = type + ':' + r.name.toLowerCase();
+      sums[k] = (sums[k] || 0) + r.pct; names[k] = r.name;
+    }
+  }));
+  for (const k in sums){
+    const avail = bal.blocks[k] || 0;
+    if (sums[k] > avail + 0.005) return `“${names[k]}”: puoi sottrarre al massimo ${pos(avail)}.`;
+  }
+  return '';
+}
 function validateAll(){
   const d=getAllocationNumbers();
-  const splitOK = d.amount>0 && d.core>=0 && d.sat>=0 && d.total<=d.amount+0.005;
+  const sub = mode === 'sub';
+  const splitOK = d.amount>0 && d.targetAllocated<=d.amount+0.005;
   const coreWithin = d.coreAllocated<=d.coreTotal+0.005;
   const satWithin = d.satAllocated<=d.satTotal+0.005;
   const blocksOK = coreWithin && satWithin && sameCents(d.coreAllocated,d.coreTotal) && sameCents(d.satAllocated,d.satTotal);
   const namesOK = [...d.coreRows, ...d.satRows].every(r => r.pct <= 0.005 || r.name.trim().length > 0);
+  const subMsg = (sub && d.amount>0) ? checkSubtract(d) : '';
   const status = document.getElementById('formStatus');
-  let message = 'Pronto per aggiungere l’investimento.';
-  let valid = splitOK && blocksOK && namesOK;
-  if (d.amount<=0) message='Inserisci l’importo complessivo dell’investimento.';
-  else if (d.total>d.amount+0.005) message=`Core e Satellite superano l’importo di ${fmtEuro(d.total-d.amount)}.`;
+  let message = sub ? 'Pronto per sottrarre l’importo.' : 'Pronto per aggiungere l’investimento.';
+  const valid = splitOK && blocksOK && namesOK && !subMsg;
+  if (d.amount<=0) message = sub ? 'Inserisci l’importo complessivo da sottrarre.' : 'Inserisci l’importo complessivo dell’investimento.';
+  else if (d.targetAllocated>d.amount+0.005) message=`Core e Satellite superano l’importo di ${fmtEuro(d.targetAllocated-d.amount)}.`;
   else if (!coreWithin) message=`Gli importi dei blocchi Core superano il budget di ${fmtEuro(d.coreAllocated-d.coreTotal)}.`;
   else if (!satWithin) message=`Gli importi dei blocchi Satellite superano il budget di ${fmtEuro(d.satAllocated-d.satTotal)}.`;
   else if (!sameCents(d.coreAllocated,d.coreTotal)) message=`Completa il Core: restano da allocare ${fmtEuro(Math.max(0,d.coreTotal-d.coreAllocated))}.`;
   else if (!sameCents(d.satAllocated,d.satTotal)) message=`Completa il Satellite: restano da allocare ${fmtEuro(Math.max(0,d.satTotal-d.satAllocated))}.`;
   else if (!namesOK) message='Assegna un nome a ogni blocco a cui hai attribuito un importo.';
+  else if (subMsg) message=subMsg;
   status.textContent=message;
   status.className='validation '+(valid?'ok':'err');
   addBtn.disabled = !valid;
   return valid;
 }
+
+function applyModeUI(){
+  const sub = mode === 'sub';
+  document.getElementById('modeAdd').classList.toggle('active', !sub);
+  const sb = document.getElementById('modeSub');
+  sb.classList.toggle('active', sub); sb.classList.toggle('sub', sub);
+  document.getElementById('amountLabel').textContent = sub ? 'Quanto stai sottraendo (€)' : 'Quanto stai investendo (€)';
+  addBtn.textContent = editingId !== null ? 'Salva modifiche' : (sub ? 'Sottrai importo dal portfolio' : 'Aggiungi investimento al portfolio');
+  addBtn.classList.toggle('editing', editingId !== null);
+  addBtn.classList.toggle('subtract', sub && editingId === null);
+}
+function setMode(m){
+  mode = m;
+  applyModeUI();
+  updateSplitUI();
+  updateSubTotals();
+}
+document.getElementById('modeAdd').addEventListener('click', () => setMode('add'));
+document.getElementById('modeSub').addEventListener('click', () => setMode('sub'));
 
 [coreEuroEl,satEuroEl].forEach(el=>el.addEventListener('input',()=>{updateSplitUI();updateSubTotals();}));
 amountEl.addEventListener('input',()=>{updateSplitUI();updateSubTotals();});
@@ -635,9 +711,9 @@ function resetFormAfterSave(){
   satEuroEl.value = '';
   txDateEl.value = todayISODate();
   editingId = null;
+  mode = 'add';
   document.getElementById('editBanner').style.display = 'none';
-  addBtn.textContent = 'Aggiungi investimento al portfolio';
-  addBtn.classList.remove('editing');
+  applyModeUI();
   buildRows('coreRows', savedBlockNames.core || coreNamesDefault);
   buildRows('satRows', savedBlockNames.satellite || satNamesDefault);
   updateSplitUI();
@@ -645,8 +721,9 @@ function resetFormAfterSave(){
 }
 
 addBtn.addEventListener('click', async () => {
+  if (!validateAll()) return;
   const d = getAllocationNumbers();
-  const amount = d.amount;
+  const amount = mode === 'sub' ? -d.amount : d.amount; // le sottrazioni sono salvate con importo negativo
   const corePct = d.corePct;
   const satPct = d.satPct;
   const coreSub = d.coreRows.filter(r => r.pct > 0 && r.name).map(r => ({...r, pct: d.coreTotal>0 ? r.pct/d.coreTotal*100 : 0}));
@@ -680,7 +757,8 @@ document.getElementById('resetAllBtn').addEventListener('click', async () => {
   render();
 });
 
-function aggregate(){
+function aggregate(list){
+  list = list || transactions;
   let totalAmount = 0;
   const cats = {}; // key -> {label, type, amount}
   function addCat(type, name, amt){
@@ -688,12 +766,12 @@ function aggregate(){
     if (!cats[key]) cats[key] = { label: name.trim(), type, amount: 0 };
     cats[key].amount += amt;
   }
-  transactions.forEach(t => {
+  list.forEach(t => {
     totalAmount += t.amount;
     const coreAmt = t.amount * t.corePct / 100;
     const satAmt = t.amount * t.satPct / 100;
     const uninvested = t.amount - coreAmt - satAmt;
-    if (uninvested > 0.0001) addCat('cash', 'Liquidità', uninvested);
+    if (Math.abs(uninvested) > 0.0001) addCat('cash', 'Liquidità', uninvested);
 
     let coreSubSum = 0;
     (t.coreSub || []).forEach(s => {
@@ -714,9 +792,10 @@ function aggregate(){
   return { totalAmount, categories: Object.values(cats).filter(c => c.amount > 0.0001) };
 }
 
-function aggregateMacro(){
+function aggregateMacro(list){
+  list = list || transactions;
   let totalAmount = 0, core = 0, satellite = 0, cash = 0;
-  transactions.forEach(t => {
+  list.forEach(t => {
     totalAmount += t.amount;
     const coreAmt = t.amount * t.corePct / 100;
     const satAmt = t.amount * t.satPct / 100;
@@ -737,23 +816,23 @@ function colorFor(cat){
   return '#565c62';
 }
 
-// Palette di colori distinti per il grafico "dettaglio per strumento": ogni
-// strumento riceve un colore diverso, assegnato in ordine di comparsa e
-// stabile finché la lista di strumenti non cambia.
-const detailPalette = [
-  '#5c9a91', '#c79a3c', '#7fa8d9', '#c1564b', '#9c7fc9',
-  '#7bbf6a', '#d98c5f', '#5fb3b3', '#c96fa3', '#a3a848'
-];
+// Ogni blocco ha il proprio colore fisso (in base alla posizione 1-6 di Core e Satellite),
+// così i 12 blocchi hanno sempre colori tutti diversi; i nomi storici non più presenti
+// tra i blocchi attuali ricevono un colore di riserva.
 function buildDetailColorMap(categories){
   const map = {};
-  let idx = 0;
+  [['core', corePalette], ['satellite', satPalette]].forEach(([type, pal]) => {
+    (savedBlockNames[type] || []).forEach((n, i) => {
+      const name = String(n).trim().toLowerCase();
+      const k = type + ':' + name;
+      if (name && !(k in map)) map[k] = pal[i % pal.length];
+    });
+  });
+  let extra = 0;
   categories.forEach(cat => {
     if (cat.label === 'Non allocato' || cat.type === 'cash') return;
-    const key = cat.type + ':' + cat.label.toLowerCase();
-    if (!(key in map)){
-      map[key] = detailPalette[idx % detailPalette.length];
-      idx++;
-    }
+    const k = cat.type + ':' + cat.label.toLowerCase();
+    if (!(k in map)) map[k] = extraPalette[extra++ % extraPalette.length];
   });
   return map;
 }
@@ -866,7 +945,8 @@ function renderHistory(){
       const d=new Date(t.date),dateStr=d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
       const coreDetail=(t.coreSub||[]).map(x=>`${escapeHtml(x.name)} ${fmtPct(x.pct)}`).join(', ')||'—';
       const satDetail=(t.satSub||[]).map(x=>`${escapeHtml(x.name)} ${fmtPct(x.pct)}`).join(', ')||'—';
-      return `<div class="tx"><div class="tx-top"><span class="tx-amount">${fmtEuro(t.amount)}</span><span class="tx-date">${dateStr}</span><span class="tx-actions"><button class="btn-edit-link" onclick="editTx(${t.id})">Modifica</button><button class="btn-danger-link" onclick="removeTx(${t.id})">Rimuovi</button></span></div><div class="tx-detail">Core ${fmtPct(t.corePct)} (${coreDetail}) · Satellite ${fmtPct(t.satPct)} (${satDetail})</div></div>`;
+      const neg=t.amount<0;
+      return `<div class="tx"><div class="tx-top"><span><span class="tx-amount${neg?' neg':''}">${neg?'− '+fmtEuro(-t.amount):fmtEuro(t.amount)}</span>${neg?'<span class="tx-badge">Sottrazione</span>':''}</span><span class="tx-date">${dateStr}</span><span class="tx-actions"><button class="btn-edit-link" onclick="editTx(${t.id})">Modifica</button><button class="btn-danger-link" onclick="removeTx(${t.id})">Rimuovi</button></span></div><div class="tx-detail">Core ${fmtPct(t.corePct)} (${coreDetail}) · Satellite ${fmtPct(t.satPct)} (${satDetail})</div></div>`;
     }).join('');
     return `<details class="history-month" open><summary><strong>${label}</strong><span class="month-meta">${arr.length} moviment${arr.length===1?'o':'i'} · ${fmtEuro(total)}</span></summary><div class="month-items">${cards}</div></details>`;
   }).join('');
@@ -964,30 +1044,38 @@ window.editTx = function(id){
   if (!t) return;
 
   editingId = id;
-  amountEl.value = t.amount;
-  coreEuroEl.value = Number((t.amount * t.corePct / 100).toFixed(2));
-  satEuroEl.value = Number((t.amount * t.satPct / 100).toFixed(2));
+  mode = t.amount < 0 ? 'sub' : 'add';
+  const absAmount = Math.abs(t.amount);
+  const toStr = n => String(Number(n.toFixed(2))).replace('.', ',');
+  amountEl.value = toStr(absAmount);
+  coreEuroEl.value = toStr(absAmount * t.corePct / 100);
+  satEuroEl.value = toStr(absAmount * t.satPct / 100);
   txDateEl.value = new Date(t.date).toISOString().slice(0,10);
 
-  function padToThree(savedSub, defaults, blockBudget){
-    const names = [], euros = [];
-    for (let i = 0; i < 3; i++){
-      const entry = (savedSub || [])[i];
-      names.push(entry ? entry.name : defaults[i]);
-      euros.push(entry ? Number((blockBudget * entry.pct / 100).toFixed(2)) : 0);
-    }
+  // Rimette ogni importo nel blocco con lo stesso nome; gli eventuali nomi storici
+  // non più presenti finiscono nei primi blocchi liberi.
+  function fillSlots(savedSub, slotNames, blockBudget){
+    const names = [...slotNames], euros = new Array(SLOTS).fill(0), used = new Array(SLOTS).fill(false), left = [];
+    const toEuro = e => Number((blockBudget * e.pct / 100).toFixed(2));
+    (savedSub || []).forEach(e => {
+      const i = names.findIndex((n, j) => !used[j] && n.trim().toLowerCase() === String(e.name).trim().toLowerCase());
+      if (i >= 0){ used[i] = true; euros[i] = toEuro(e); } else left.push(e);
+    });
+    left.forEach(e => {
+      const i = used.findIndex(u => !u);
+      if (i >= 0){ used[i] = true; names[i] = e.name; euros[i] = toEuro(e); }
+    });
     return { names, euros };
   }
-  const coreData = padToThree(t.coreSub, coreNamesDefault, parseFloat(coreEuroEl.value)||0);
-  const satData = padToThree(t.satSub, satNamesDefault, parseFloat(satEuroEl.value)||0);
+  const coreData = fillSlots(t.coreSub, savedBlockNames.core || coreNamesDefault, parseEuroInput(coreEuroEl.value));
+  const satData = fillSlots(t.satSub, savedBlockNames.satellite || satNamesDefault, parseEuroInput(satEuroEl.value));
   buildRows('coreRows', coreData.names, coreData.euros);
   buildRows('satRows', satData.names, satData.euros);
 
+  document.getElementById('editBanner').style.display = 'flex';
+  applyModeUI();
   updateSplitUI();
   updateSubTotals();
-  document.getElementById('editBanner').style.display = 'flex';
-  addBtn.textContent = 'Salva modifiche';
-  addBtn.classList.add('editing');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -1005,8 +1093,8 @@ async function init(){
 
   const savedNames = await loadBlockNames();
   savedBlockNames = {
-    core: (savedNames && Array.isArray(savedNames.core) && savedNames.core.length) ? savedNames.core : [...coreNamesDefault],
-    satellite: (savedNames && Array.isArray(savedNames.satellite) && savedNames.satellite.length) ? savedNames.satellite : [...satNamesDefault]
+    core: normalizeNames(savedNames && Array.isArray(savedNames.core) ? savedNames.core : null, coreNamesDefault),
+    satellite: normalizeNames(savedNames && Array.isArray(savedNames.satellite) ? savedNames.satellite : null, satNamesDefault)
   };
   buildRows('coreRows', savedBlockNames.core);
   buildRows('satRows', savedBlockNames.satellite);
@@ -1018,6 +1106,7 @@ async function init(){
     if (e.target.classList.contains('sub-name')) saveBlockNames();
   });
 
+  applyModeUI();
   updateSplitUI();
   updateSubTotals();
   loadTransactions();
