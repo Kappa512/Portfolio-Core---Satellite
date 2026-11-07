@@ -281,12 +281,11 @@
   .mode-switch{display:flex;gap:8px;align-items:center;margin:0 0 16px;flex-wrap:wrap}
   .mode-switch button{padding:8px 13px;background:var(--panel-2);border:1px solid var(--border);color:var(--text-muted);font-size:12px}
   .mode-switch button.active{background:var(--core-dim);border-color:var(--core);color:#d8eee9}
-  .sub-row{grid-template-columns:10px minmax(0,1fr) 104px 82px;align-items:center;}
-  .slot-dot{width:10px;height:10px;border-radius:50%;display:block}
+  .sub-row{grid-template-columns:minmax(0,1fr) 104px 82px;align-items:center;}
   .sub-row .sub-euro{text-align:right;font:11px 'IBM Plex Mono',monospace;color:var(--text-muted);margin:0;white-space:nowrap}
   .split-equivalent{font:12px 'IBM Plex Mono',monospace;color:var(--text-muted)}
   .allocation-hint{font-size:12px;color:var(--text-muted);margin:-7px 0 16px;line-height:1.5}
-  @media(max-width:440px){.sub-row{grid-template-columns:10px minmax(0,1fr) 92px 70px;gap:6px}.sub-row .sub-euro{font-size:10px}}
+  @media(max-width:440px){.sub-row{grid-template-columns:minmax(0,1fr) 92px 70px;gap:6px}.sub-row .sub-euro{font-size:10px}}
   .sub-row input[type=number]{min-width:0}
   .block-total-euro{font:12px 'IBM Plex Mono',monospace;margin-top:5px;color:var(--text)}
   .allocation-summary{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;padding:12px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;font:12px 'IBM Plex Mono',monospace}
@@ -428,8 +427,8 @@ let mode = 'add'; // 'add' = aggiungi importo, 'sub' = sottrai importo
 const coreNamesDefault = ['Core 1', 'Core 2', 'Core 3', 'Core 4', 'Core 5', 'Core 6'];
 const satNamesDefault = ['Satellite 1', 'Satellite 2', 'Satellite 3', 'Satellite 4', 'Satellite 5', 'Satellite 6'];
 // 12 colori tutti diversi: uno per ogni blocco (6 Core + 6 Satellite).
-const corePalette = ['#3fb59f', '#5b9cf0', '#7bbf6a', '#8a7cf0', '#c3d14c', '#45c3dd'];
-const satPalette  = ['#e8b04a', '#ee8a4c', '#e0605a', '#dc72ac', '#b384e0', '#a98a68'];
+const corePalette = ['#4f7cff', '#3cb44b', '#46f0f0', '#a050e0', '#bcf60c', '#8a93a0'];
+const satPalette  = ['#e6194b', '#f58231', '#ffe119', '#f032e6', '#00a896', '#ffa8b8'];
 const extraPalette = ['#9aa5b1', '#e6d3a3', '#7f9f5a', '#c98f9f', '#6f8fb0', '#b5a0d0'];
 function normalizeNames(arr, defaults){
   return Array.from({length: SLOTS}, (_, i) =>
@@ -439,14 +438,12 @@ let savedBlockNames = { core: [...coreNamesDefault], satellite: [...satNamesDefa
 
 function buildRows(containerId, names, values){
   const c = document.getElementById(containerId);
-  const pal = containerId === 'coreRows' ? corePalette : satPalette;
   c.innerHTML = '';
   names.forEach((n, i) => {
     const row = document.createElement('div');
     row.className = 'sub-row';
     const euroVal = (values && values[i] !== undefined) ? values[i] : 0;
     row.innerHTML = `
-      <span class="slot-dot" style="background:${pal[i % pal.length]}"></span>
       <input type="text" class="sub-name" data-i="${i}" value="${escapeAttr(n)}" placeholder="Nome blocco">
       <input type="text" inputmode="decimal" autocomplete="off" class="sub-pct" data-i="${i}" value="${euroVal === 0 ? '' : euroVal}" placeholder="€" aria-label="Importo in euro">
       <div class="sub-euro">—</div>
