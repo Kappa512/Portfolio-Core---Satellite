@@ -161,7 +161,7 @@
   .sub-row{
     display:grid; grid-template-columns: 1fr 76px; gap: 8px; margin-bottom: 8px;
   }
-  .sub-row input[type=number]{ text-align: right; }
+  .sub-row input{ text-align: right; }
 
   .sub-total{
     font-size: 12px; font-family:'IBM Plex Mono', monospace; color: var(--text-muted);
@@ -281,8 +281,11 @@
   .mode-switch{display:flex;gap:8px;align-items:center;margin:0 0 16px;flex-wrap:wrap}
   .mode-switch button{padding:8px 13px;background:var(--panel-2);border:1px solid var(--border);color:var(--text-muted);font-size:12px}
   .mode-switch button.active{background:var(--core-dim);border-color:var(--core);color:#d8eee9}
-  .sub-row{grid-template-columns:minmax(0,1fr) 86px;}
-  .sub-row .sub-euro{grid-column:1/-1;text-align:right;font:11px 'IBM Plex Mono',monospace;color:var(--text-muted);margin-top:-5px;margin-bottom:3px}
+  .sub-row{grid-template-columns:minmax(0,1fr) 104px 82px;align-items:center;}
+  .sub-row .sub-euro{text-align:right;font:11px 'IBM Plex Mono',monospace;color:var(--text-muted);margin:0;white-space:nowrap}
+  .split-equivalent{font:12px 'IBM Plex Mono',monospace;color:var(--text-muted)}
+  .allocation-hint{font-size:12px;color:var(--text-muted);margin:-7px 0 16px;line-height:1.5}
+  @media(max-width:440px){.sub-row{grid-template-columns:minmax(0,1fr) 92px 70px;gap:6px}.sub-row .sub-euro{font-size:10px}}
   .sub-row input[type=number]{min-width:0}
   .block-total-euro{font:12px 'IBM Plex Mono',monospace;margin-top:5px;color:var(--text)}
   .allocation-summary{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;padding:12px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;font:12px 'IBM Plex Mono',monospace}
@@ -309,7 +312,7 @@
     <div class="eyebrow">Gestione portfolio</div>
     <h1><span class="core-word">Core</span> <span class="amp">&amp;</span> <span class="satellite-word">Satellite</span></h1>
     <div class="accent-rule"></div>
-    <p>Registra ogni investimento, dividilo tra Core e Satellite e assegna gli strumenti ai tuoi blocchi. Il portfolio si aggiorna da solo, si somma nel tempo e resta modificabile in ogni sua parte, dai singoli strumenti fino alla cronologia.</p>
+    <p>Registra ogni investimento, suddividilo in euro tra Core e Satellite e assegna gli importi ai singoli strumenti. Le percentuali vengono calcolate automaticamente e il portfolio si aggiorna nel tempo.</p>
     <div class="totalbar">
       <span class="label">Totale investito finora</span>
       <span class="value" id="totalInvested">€ 0</span>
@@ -324,7 +327,7 @@
     <div class="amount-date-row">
       <div class="amount-row">
         <label for="amount">Quanto stai investendo (€)</label>
-        <input type="number" id="amount" min="0" step="0.01" placeholder="es. 100">
+        <input type="text" id="amount" inputmode="decimal" autocomplete="off" placeholder="es. 100,00">
       </div>
       <div class="date-row">
         <label for="txDate">Data</label>
@@ -340,12 +343,12 @@
     </div>
     <div class="split-grid">
       <div class="split-field">
-        <div class="pct-label"><span class="tag core">Core</span></div>
-        <input type="number" id="corePct" min="0" max="100" step="1" value="70">
+        <div class="pct-label"><span class="tag core">Core</span><span class="split-equivalent" id="corePctEquivalent">—</span></div>
+        <input type="text" id="coreEuro" inputmode="decimal" autocomplete="off" placeholder="Importo in euro">
       </div>
       <div class="split-field">
-        <div class="pct-label"><span class="tag satellite">Satellite</span></div>
-        <input type="number" id="satellitePct" min="0" max="100" step="1" value="30">
+        <div class="pct-label"><span class="tag satellite">Satellite</span><span class="split-equivalent" id="satPctEquivalent">—</span></div>
+        <input type="text" id="satelliteEuro" inputmode="decimal" autocomplete="off" placeholder="Importo in euro">
       </div>
     </div>
     <div class="bar"><div class="seg core" id="splitBarCore"></div><div class="seg satellite" id="splitBarSat"></div></div>
@@ -357,11 +360,7 @@
       <span class="step-num">03</span>
       <span class="step-title">Allocazione dei blocchi</span>
     </div>
-    <div class="mode-switch" aria-label="Modalità di allocazione dei blocchi">
-      <span style="font-size:12px;color:var(--text-muted)">Ripartisci i singoli blocchi in:</span>
-      <button type="button" id="modePct" class="active">Percentuale %</button>
-      <button type="button" id="modeEuro">Importi €</button>
-    </div>
+    <p class="allocation-hint">Inserisci direttamente gli importi in euro. La percentuale corrispondente viene mostrata accanto a ogni blocco.</p>
     <div class="sub-blocks">
       <div class="sub-block core-block">
         <div class="sub-block-head"><span class="dot core"></span><span class="sub-block-title">Core — 3 blocchi</span></div>
@@ -384,7 +383,8 @@
       <span>Stai modificando un investimento esistente.</span>
       <button id="cancelEditBtn">Annulla</button>
     </div>
-    <button class="btn-primary" id="addBtn">Aggiungi investimento al portfolio</button>
+    <div class="validation ok" id="formStatus" aria-live="polite">Inserisci l’importo e completa la ripartizione per abilitare il salvataggio.</div>
+    <button type="button" class="btn-primary" id="addBtn">Aggiungi investimento al portfolio</button>
   </section>
 
   <section class="portfolio-section">
@@ -413,22 +413,21 @@ const STORAGE_KEY = 'core_satellite_transactions';
 const NAMES_KEY = 'core_satellite_block_names';
 let transactions = [];
 let editingId = null;
-let allocationMode = 'pct';
-
 const coreNamesDefault = ['Core 1', 'Core 2', 'Core 3'];
 const satNamesDefault = ['Satellite 1', 'Satellite 2', 'Satellite 3'];
+let savedBlockNames = { core: [...coreNamesDefault], satellite: [...satNamesDefault] };
 
-function buildRows(containerId, names, pcts){
+function buildRows(containerId, names, values){
   const c = document.getElementById(containerId);
   c.innerHTML = '';
   names.forEach((n, i) => {
     const row = document.createElement('div');
     row.className = 'sub-row';
-    const pctVal = (pcts && pcts[i] !== undefined) ? pcts[i] : 0;
+    const euroVal = (values && values[i] !== undefined) ? values[i] : 0;
     row.innerHTML = `
       <input type="text" class="sub-name" data-i="${i}" value="${escapeAttr(n)}" placeholder="Nome blocco">
-      <input type="number" class="sub-pct" data-i="${i}" min="0" step="0.01" value="${pctVal === 0 ? '' : pctVal}" placeholder="0">
-      <div class="sub-euro"></div>
+      <input type="text" inputmode="decimal" autocomplete="off" class="sub-pct" data-i="${i}" value="${euroVal === 0 ? '' : euroVal}" placeholder="€" aria-label="Importo in euro">
+      <div class="sub-euro">—</div>
     `;
     c.appendChild(row);
   });
@@ -445,8 +444,8 @@ function todayISODate(){
 
 const amountEl = document.getElementById('amount');
 const txDateEl = document.getElementById('txDate');
-const corePctEl = document.getElementById('corePct');
-const satPctEl = document.getElementById('satellitePct');
+const coreEuroEl = document.getElementById('coreEuro');
+const satEuroEl = document.getElementById('satelliteEuro');
 const splitBarCore = document.getElementById('splitBarCore');
 const splitBarSat = document.getElementById('splitBarSat');
 const splitValidation = document.getElementById('splitValidation');
@@ -455,70 +454,74 @@ const addBtn = document.getElementById('addBtn');
 function fmtEuro(n){
   return n.toLocaleString('it-IT', {style:'currency', currency:'EUR', maximumFractionDigits:2});
 }
+// Accetta sia la virgola italiana sia il punto decimale, anche su Chrome Android.
+function parseEuroInput(value){
+  let raw = String(value ?? '').trim().replace(/\s/g, '');
+  if (!raw) return 0;
+  if (raw.includes(',')) raw = raw.replace(/\./g, '').replace(',', '.');
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+function sameCents(a,b){ return Math.round(a*100) === Math.round(b*100); }
+
 function fmtPct(n){
   return n.toLocaleString('it-IT', {maximumFractionDigits:1}) + '%';
 }
-
 function readSubRows(containerId){
   const c = document.getElementById(containerId);
   const names = [...c.querySelectorAll('.sub-name')].map(i => i.value.trim());
-  const pcts = [...c.querySelectorAll('.sub-pct')].map(i => parseFloat(i.value) || 0);
-  return names.map((name, i) => ({ name, pct: pcts[i] }));
+  const euros = [...c.querySelectorAll('.sub-pct')].map(i => Math.max(0, parseEuroInput(i.value)));
+  return names.map((name, i) => ({ name, pct: euros[i] }));
 }
-
+function getSplitNumbers(){
+  const amount = Math.max(0, parseEuroInput(amountEl.value));
+  const core = Math.max(0, parseEuroInput(coreEuroEl.value));
+  const sat = Math.max(0, parseEuroInput(satEuroEl.value));
+  return { amount, core, sat, corePct: amount ? core/amount*100 : 0, satPct: amount ? sat/amount*100 : 0, total: core+sat };
+}
 function updateSplitUI(){
-  const core = parseFloat(corePctEl.value) || 0;
-  const sat = parseFloat(satPctEl.value) || 0;
-  const total = core + sat;
-  splitBarCore.style.width = Math.min(core,100) + '%';
-  splitBarSat.style.width = Math.min(sat, 100-Math.min(core,100)) + '%';
-  if (total > 100){
-    splitValidation.textContent = `Il totale è ${fmtPct(total)} — supera il 100%, riduci una delle due percentuali.`;
+  const d = getSplitNumbers();
+  splitBarCore.style.width = (d.amount ? Math.min(d.core/d.amount*100,100) : 0) + '%';
+  splitBarSat.style.width = (d.amount ? Math.min(d.sat/d.amount*100,Math.max(0,100-d.core/d.amount*100)) : 0) + '%';
+  document.getElementById('corePctEquivalent').textContent = d.amount ? fmtPct(d.corePct) : '—';
+  document.getElementById('satPctEquivalent').textContent = d.amount ? fmtPct(d.satPct) : '—';
+  if (d.amount <= 0){
+    splitValidation.textContent = 'Inserisci l’importo complessivo per calcolare le percentuali.';
+    splitValidation.className = 'validation ok';
+  } else if (d.total > d.amount + 0.005){
+    splitValidation.textContent = `Core + Satellite = ${fmtEuro(d.total)} — superano l’investimento di ${fmtEuro(d.total-d.amount)}.`;
     splitValidation.className = 'validation err';
   } else {
-    const rem = 100 - total;
-    splitValidation.textContent = rem > 0.01
-      ? `Core ${fmtPct(core)} + Satellite ${fmtPct(sat)} — resta ${fmtPct(rem)} non allocato (liquidità).`
-      : `Core ${fmtPct(core)} + Satellite ${fmtPct(sat)} — allocazione completa.`;
+    const remaining = d.amount-d.total;
+    splitValidation.textContent = remaining > 0.005
+      ? `Core ${fmtEuro(d.core)} (${fmtPct(d.corePct)}) + Satellite ${fmtEuro(d.sat)} (${fmtPct(d.satPct)}) — liquidità residua ${fmtEuro(remaining)}.`
+      : `Core ${fmtEuro(d.core)} (${fmtPct(d.corePct)}) + Satellite ${fmtEuro(d.sat)} (${fmtPct(d.satPct)}) — allocazione completa.`;
     splitValidation.className = 'validation ok';
   }
   validateAll();
 }
-
 function getAllocationNumbers(){
-  const amount = Math.max(0, parseFloat(amountEl.value) || 0);
+  const split = getSplitNumbers();
   const coreRows = readSubRows('coreRows'), satRows = readSubRows('satRows');
-  const coreTotal = amount * Math.max(0, parseFloat(corePctEl.value) || 0) / 100;
-  const satTotal = amount * Math.max(0, parseFloat(satPctEl.value) || 0) / 100;
-  const coreAllocated = allocationMode === 'pct'
-    ? coreTotal * coreRows.reduce((a,r)=>a+r.pct,0) / 100
-    : coreRows.reduce((a,r)=>a+r.pct,0);
-  const satAllocated = allocationMode === 'pct'
-    ? satTotal * satRows.reduce((a,r)=>a+r.pct,0) / 100
-    : satRows.reduce((a,r)=>a+r.pct,0);
-  return {amount, coreRows, satRows, coreTotal, satTotal, coreAllocated, satAllocated,
-    allocated:coreAllocated+satAllocated, targetAllocated:coreTotal+satTotal};
+  const coreAllocated = coreRows.reduce((a,r)=>a+r.pct,0);
+  const satAllocated = satRows.reduce((a,r)=>a+r.pct,0);
+  return {amount:split.amount, coreRows, satRows, coreTotal:split.core, satTotal:split.sat,
+    corePct:split.corePct, satPct:split.satPct, coreAllocated, satAllocated,
+    allocated:coreAllocated+satAllocated, targetAllocated:split.total};
 }
 function updateSubTotals(){
   const d = getAllocationNumbers();
-  const coreSum = d.coreRows.reduce((a,r)=>a+r.pct,0), satSum = d.satRows.reduce((a,r)=>a+r.pct,0);
   const coreEl = document.getElementById('coreSubTotal'), satEl = document.getElementById('satSubTotal');
-  if(allocationMode === 'pct'){
-    coreEl.textContent = coreSum > 100 ? `Totale ${fmtPct(coreSum)} — supera il 100% del Core` : `Totale ${fmtPct(coreSum)} del Core${100-coreSum>0.01 ? ' · '+fmtPct(100-coreSum)+' non allocato' : ''}`;
-    satEl.textContent = satSum > 100 ? `Totale ${fmtPct(satSum)} — supera il 100% del Satellite` : `Totale ${fmtPct(satSum)} del Satellite${100-satSum>0.01 ? ' · '+fmtPct(100-satSum)+' non allocato' : ''}`;
-  } else {
-    coreEl.textContent = `Acquisti Core: ${fmtEuro(d.coreAllocated)} / ${fmtEuro(d.coreTotal)}`;
-    satEl.textContent = `Acquisti Satellite: ${fmtEuro(d.satAllocated)} / ${fmtEuro(d.satTotal)}`;
-  }
-  coreEl.className = 'sub-total' + ((allocationMode==='pct' && coreSum>100) || (allocationMode==='euro' && d.coreAllocated>d.coreTotal+0.005) ? ' err':'');
-  satEl.className = 'sub-total' + ((allocationMode==='pct' && satSum>100) || (allocationMode==='euro' && d.satAllocated>d.satTotal+0.005) ? ' err':'');
+  coreEl.textContent = `Allocato Core: ${fmtEuro(d.coreAllocated)} / ${fmtEuro(d.coreTotal)}`;
+  satEl.textContent = `Allocato Satellite: ${fmtEuro(d.satAllocated)} / ${fmtEuro(d.satTotal)}`;
+  coreEl.className = 'sub-total' + (d.coreAllocated>d.coreTotal+0.005 ? ' err':'');
+  satEl.className = 'sub-total' + (d.satAllocated>d.satTotal+0.005 ? ' err':'');
   ['coreRows','satRows'].forEach((id,idx)=>{
     const rows = idx===0 ? d.coreRows : d.satRows;
     const blockTotal = idx===0 ? d.coreTotal : d.satTotal;
     document.querySelectorAll(`#${id} .sub-euro`).forEach((el,i)=>{
-      const value = rows[i]?.pct || 0;
-      const euro = allocationMode==='pct' ? blockTotal*value/100 : value;
-      el.textContent = allocationMode==='pct' ? `≈ ${fmtEuro(euro)}` : `${blockTotal>0 ? fmtPct(euro/blockTotal*100) : '—'} del blocco`;
+      const euro = rows[i]?.pct || 0;
+      el.textContent = blockTotal>0 ? fmtPct(euro/blockTotal*100) : '—';
     });
   });
   document.getElementById('coreEuroTotal').textContent = fmtEuro(d.coreAllocated);
@@ -533,45 +536,29 @@ function updateSubTotals(){
 }
 function validateAll(){
   const d=getAllocationNumbers();
-  const core = parseFloat(corePctEl.value)||0, sat=parseFloat(satPctEl.value)||0;
-  const coreSum=d.coreRows.reduce((a,r)=>a+r.pct,0), satSum=d.satRows.reduce((a,r)=>a+r.pct,0);
-  const splitOK = core>=0 && sat>=0 && core+sat<=100.0001;
-  const blocksOK = allocationMode==='pct'
-    ? coreSum<=100.0001 && satSum<=100.0001
-    : d.coreAllocated<=d.coreTotal+0.005 && d.satAllocated<=d.satTotal+0.005 && Math.abs(d.coreAllocated-d.coreTotal)<0.005 && Math.abs(d.satAllocated-d.satTotal)<0.005;
-  addBtn.disabled = !(d.amount>0 && splitOK && blocksOK);
+  const splitOK = d.amount>0 && d.core>=0 && d.sat>=0 && d.total<=d.amount+0.005;
+  const coreWithin = d.coreAllocated<=d.coreTotal+0.005;
+  const satWithin = d.satAllocated<=d.satTotal+0.005;
+  const blocksOK = coreWithin && satWithin && sameCents(d.coreAllocated,d.coreTotal) && sameCents(d.satAllocated,d.satTotal);
+  const namesOK = [...d.coreRows, ...d.satRows].every(r => r.pct <= 0.005 || r.name.trim().length > 0);
+  const status = document.getElementById('formStatus');
+  let message = 'Pronto per aggiungere l’investimento.';
+  let valid = splitOK && blocksOK && namesOK;
+  if (d.amount<=0) message='Inserisci l’importo complessivo dell’investimento.';
+  else if (d.total>d.amount+0.005) message=`Core e Satellite superano l’importo di ${fmtEuro(d.total-d.amount)}.`;
+  else if (!coreWithin) message=`Gli importi dei blocchi Core superano il budget di ${fmtEuro(d.coreAllocated-d.coreTotal)}.`;
+  else if (!satWithin) message=`Gli importi dei blocchi Satellite superano il budget di ${fmtEuro(d.satAllocated-d.satTotal)}.`;
+  else if (!sameCents(d.coreAllocated,d.coreTotal)) message=`Completa il Core: restano da allocare ${fmtEuro(Math.max(0,d.coreTotal-d.coreAllocated))}.`;
+  else if (!sameCents(d.satAllocated,d.satTotal)) message=`Completa il Satellite: restano da allocare ${fmtEuro(Math.max(0,d.satTotal-d.satAllocated))}.`;
+  else if (!namesOK) message='Assegna un nome a ogni blocco a cui hai attribuito un importo.';
+  status.textContent=message;
+  status.className='validation '+(valid?'ok':'err');
+  addBtn.disabled = !valid;
+  return valid;
 }
-function setAllocationMode(next){
-  if(next===allocationMode)return;
-  const amount=Math.max(0,parseFloat(amountEl.value)||0);
-  const cp=Math.max(0,parseFloat(corePctEl.value)||0), sp=Math.max(0,parseFloat(satPctEl.value)||0);
-  const coreBudget=amount*cp/100, satBudget=amount*sp/100;
-  const coreRows=readSubRows('coreRows'), satRows=readSubRows('satRows');
-  if(next==='euro'){
-    coreRows.forEach(r=>r.pct=Number((coreBudget*r.pct/100).toFixed(2)));
-    satRows.forEach(r=>r.pct=Number((satBudget*r.pct/100).toFixed(2)));
-  } else {
-    coreRows.forEach(r=>r.pct=coreBudget>0?r.pct/coreBudget*100:0);
-    satRows.forEach(r=>r.pct=satBudget>0?r.pct/satBudget*100:0);
-  }
-  allocationMode=next;
-  document.getElementById('modePct').classList.toggle('active',next==='pct');
-  document.getElementById('modeEuro').classList.toggle('active',next==='euro');
-  document.querySelectorAll('.sub-pct').forEach(el=>{
-    const rows=el.closest('#coreRows')?coreRows:satRows;
-    const value=rows[Number(el.dataset.i)]?.pct||0;
-    el.value=value?Number(value.toFixed(2)):'';
-    el.step='0.01';
-    el.removeAttribute('max');
-    el.placeholder=next==='pct'?'%':'€';
-    el.setAttribute('aria-label',next==='pct'?'Percentuale del blocco':'Importo in euro');
-  });
-  updateSubTotals();
-}
-document.getElementById('modePct').addEventListener('click',()=>setAllocationMode('pct'));
-document.getElementById('modeEuro').addEventListener('click',()=>setAllocationMode('euro'));
-[corePctEl,satPctEl].forEach(el=>el.addEventListener('input',()=>{updateSplitUI();updateSubTotals();}));
-amountEl.addEventListener('input',()=>{updateSubTotals();updateSplitUI();});
+
+[coreEuroEl,satEuroEl].forEach(el=>el.addEventListener('input',()=>{updateSplitUI();updateSubTotals();}));
+amountEl.addEventListener('input',()=>{updateSplitUI();updateSubTotals();});
 document.getElementById('coreRows').addEventListener('input',updateSubTotals);
 document.getElementById('satRows').addEventListener('input',updateSubTotals);
 
@@ -619,14 +606,16 @@ async function loadBlockNames(){
 }
 
 async function saveBlockNames(){
+  // I nomi configurati sono indipendenti dai nomi storici caricati durante la modifica di una vecchia operazione.
+  if (editingId !== null) return;
   const coreNames = [...document.querySelectorAll('#coreRows .sub-name')].map(i => i.value);
   const satNames = [...document.querySelectorAll('#satRows .sub-name')].map(i => i.value);
-  const data = { core: coreNames, satellite: satNames };
+  savedBlockNames = { core: coreNames, satellite: satNames };
   try{
     if (hasClaudeStorage()){
-      await window.storage.set(NAMES_KEY, JSON.stringify(data), false);
+      await window.storage.set(NAMES_KEY, JSON.stringify(savedBlockNames), false);
     } else {
-      localStorage.setItem(NAMES_KEY, JSON.stringify(data));
+      localStorage.setItem(NAMES_KEY, JSON.stringify(savedBlockNames));
     }
   }catch(e){
     console.error('Storage error (nomi blocchi)', e);
@@ -642,24 +631,26 @@ function dateInputToISO(dateStr){
 
 function resetFormAfterSave(){
   amountEl.value = '';
+  coreEuroEl.value = '';
+  satEuroEl.value = '';
   txDateEl.value = todayISODate();
   editingId = null;
   document.getElementById('editBanner').style.display = 'none';
   addBtn.textContent = 'Aggiungi investimento al portfolio';
   addBtn.classList.remove('editing');
+  buildRows('coreRows', savedBlockNames.core || coreNamesDefault);
+  buildRows('satRows', savedBlockNames.satellite || satNamesDefault);
+  updateSplitUI();
+  updateSubTotals();
 }
 
 addBtn.addEventListener('click', async () => {
-  const amount = parseFloat(amountEl.value) || 0;
-  let corePct = parseFloat(corePctEl.value) || 0;
-  let satPct = parseFloat(satPctEl.value) || 0;
-  let coreSub = readSubRows('coreRows').filter(r => r.pct > 0 && r.name);
-  let satSub = readSubRows('satRows').filter(r => r.pct > 0 && r.name);
-  if(allocationMode==='euro'){
-    const coreBudget=amount*corePct/100, satBudget=amount*satPct/100;
-    coreSub=coreSub.map(r=>({...r,pct:coreBudget>0?r.pct/coreBudget*100:0}));
-    satSub=satSub.map(r=>({...r,pct:satBudget>0?r.pct/satBudget*100:0}));
-  }
+  const d = getAllocationNumbers();
+  const amount = d.amount;
+  const corePct = d.corePct;
+  const satPct = d.satPct;
+  const coreSub = d.coreRows.filter(r => r.pct > 0 && r.name).map(r => ({...r, pct: d.coreTotal>0 ? r.pct/d.coreTotal*100 : 0}));
+  const satSub = d.satRows.filter(r => r.pct > 0 && r.name).map(r => ({...r, pct: d.satTotal>0 ? r.pct/d.satTotal*100 : 0}));
   const dateISO = txDateEl.value ? dateInputToISO(txDateEl.value) : new Date().toISOString();
 
   if (editingId !== null){
@@ -672,7 +663,7 @@ addBtn.addEventListener('click', async () => {
     transactions.push(tx);
   }
   await saveTransactions();
-  await saveBlockNames();
+  if (editingId === null) await saveBlockNames();
 
   resetFormAfterSave();
   render();
@@ -973,36 +964,30 @@ window.editTx = function(id){
   if (!t) return;
 
   editingId = id;
-  if(allocationMode!=='pct') setAllocationMode('pct');
   amountEl.value = t.amount;
+  coreEuroEl.value = Number((t.amount * t.corePct / 100).toFixed(2));
+  satEuroEl.value = Number((t.amount * t.satPct / 100).toFixed(2));
   txDateEl.value = new Date(t.date).toISOString().slice(0,10);
-  corePctEl.value = t.corePct;
-  satPctEl.value = t.satPct;
 
-  // Sempre 3 righe per blocco, anche se in fase di aggiunta ne erano state
-  // valorizzate solo alcune: le mancanti vengono riempite con un nome di
-  // default e percentuale 0, così restano modificabili/aggiungibili.
-  function padToThree(savedSub, defaults){
-    const names = [], pcts = [];
+  function padToThree(savedSub, defaults, blockBudget){
+    const names = [], euros = [];
     for (let i = 0; i < 3; i++){
       const entry = (savedSub || [])[i];
       names.push(entry ? entry.name : defaults[i]);
-      pcts.push(entry ? entry.pct : 0);
+      euros.push(entry ? Number((blockBudget * entry.pct / 100).toFixed(2)) : 0);
     }
-    return { names, pcts };
+    return { names, euros };
   }
-  const coreData = padToThree(t.coreSub, coreNamesDefault);
-  const satData = padToThree(t.satSub, satNamesDefault);
-  buildRows('coreRows', coreData.names, coreData.pcts);
-  buildRows('satRows', satData.names, satData.pcts);
+  const coreData = padToThree(t.coreSub, coreNamesDefault, parseFloat(coreEuroEl.value)||0);
+  const satData = padToThree(t.satSub, satNamesDefault, parseFloat(satEuroEl.value)||0);
+  buildRows('coreRows', coreData.names, coreData.euros);
+  buildRows('satRows', satData.names, satData.euros);
 
   updateSplitUI();
   updateSubTotals();
-
   document.getElementById('editBanner').style.display = 'flex';
   addBtn.textContent = 'Salva modifiche';
   addBtn.classList.add('editing');
-
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -1013,14 +998,18 @@ async function init(){
   // digitare sostituisce subito il valore invece di accodarsi ad esso
   // (evita che "0" + "15" digitato diventi "015"/"150").
   document.body.addEventListener('focusin', (e) => {
-    if (e.target.tagName === 'INPUT' && e.target.type === 'number'){
+    if (e.target.tagName === 'INPUT' && (e.target.type === 'number' || e.target.inputMode === 'decimal')){
       setTimeout(() => e.target.select(), 0);
     }
   });
 
   const savedNames = await loadBlockNames();
-  buildRows('coreRows', (savedNames && savedNames.core && savedNames.core.length) ? savedNames.core : coreNamesDefault);
-  buildRows('satRows', (savedNames && savedNames.satellite && savedNames.satellite.length) ? savedNames.satellite : satNamesDefault);
+  savedBlockNames = {
+    core: (savedNames && Array.isArray(savedNames.core) && savedNames.core.length) ? savedNames.core : [...coreNamesDefault],
+    satellite: (savedNames && Array.isArray(savedNames.satellite) && savedNames.satellite.length) ? savedNames.satellite : [...satNamesDefault]
+  };
+  buildRows('coreRows', savedBlockNames.core);
+  buildRows('satRows', savedBlockNames.satellite);
 
   document.getElementById('coreRows').addEventListener('focusout', (e) => {
     if (e.target.classList.contains('sub-name')) saveBlockNames();
