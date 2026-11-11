@@ -235,8 +235,16 @@
     font-family:'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--text-muted);
   }
 
-  .pl-grid{ display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+  .pl-grid{ display:grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 12px; }
+  .pl-box{ grid-column: span 3; }
+  .pl-box.third{ grid-column: span 2; padding: 12px 9px; }
+  .pl-box.third .pl-label{ font-size: 10px; letter-spacing: 0; }
+  .pl-box.third .pl-val{ font-size: 14px; }
   .pl-box.wide{ grid-column: 1 / -1; }
+  .pick-hint{ font-size: 12px; color: var(--text-muted); margin: 0 0 12px; }
+  .link-btn{ background:none; border:none; padding:0; margin-top:12px; font-size:12px; color:var(--text-muted); text-decoration:underline; cursor:pointer; width:auto; }
+  .dot.color-pick{ position:relative; cursor:pointer; flex:0 0 auto; }
+  .color-pick input{ position:absolute; top:-9px; left:-9px; width:26px; height:26px; opacity:0; cursor:pointer; border:0; padding:0; }
   .pl-box{ background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; min-width: 0; }
   .pl-label{ display:block; font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
   .pl-val{ display:block; font-family:'IBM Plex Mono', monospace; font-size: 20px; overflow-wrap: anywhere; }
@@ -269,6 +277,17 @@
   }
   .legend-group-title:first-child{ margin-top: 0; }
 
+  /* Schermate richiudibili a tendina */
+  [data-collapse], .chart-panel-title{ cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+  [data-collapse]::after, .chart-panel-title::after{ content:'▾'; color:var(--text-muted); font-size:12px; margin-left:10px; }
+  .step-head::after{ margin-left:auto; }
+  .chart-panel-title{ display:flex; align-items:center; justify-content:space-between; }
+  .chart-panel-title::after{ margin-left:auto; }
+  .collapsed > [data-collapse]::after, .portfolio-section.collapsed h2::after, .chart-panel.collapsed > .chart-panel-title::after{ content:'▸'; }
+  .step.collapsed > :not(.step-head), .history.collapsed > :not(h3), .chart-panel.collapsed > :not(.chart-panel-title){ display:none; }
+  .portfolio-section.collapsed #portfolioBody{ display:none; }
+  .step.collapsed .step-head, .chart-panel.collapsed > .chart-panel-title, .history.collapsed > h3, .portfolio-section.collapsed .portfolio-head{ margin-bottom:0; }
+  .step.collapsed{ padding-bottom:20px; }
   .history{ margin-top: 30px; }
   .history h3{
     font-family:'Fraunces', serif; font-weight:500; font-size: 16px;
@@ -289,11 +308,17 @@
   .mode-switch{display:flex;gap:8px;align-items:center;margin:0 0 16px;flex-wrap:wrap}
   .mode-switch button{padding:8px 13px;background:var(--panel-2);border:1px solid var(--border);color:var(--text-muted);font-size:12px}
   .mode-switch button.active{background:var(--core-dim);border-color:var(--core);color:#d8eee9}
-  .sub-row{grid-template-columns:minmax(0,1fr) 104px 82px;align-items:center;}
+  .sub-row{grid-template-columns:minmax(0,1fr) 104px 82px 28px;align-items:center;}
+  .sub-remove{width:28px;height:28px;padding:0;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:13px;line-height:1;cursor:pointer}
+  .sub-remove:hover{color:var(--danger);border-color:var(--danger)}
+  .sub-row.only .sub-remove{visibility:hidden}
+  .add-block{width:100%;margin:2px 0 10px;padding:8px 10px;background:transparent;border:1px dashed var(--border);border-radius:7px;color:var(--text-muted);font-size:12px;cursor:pointer}
+  .add-block:hover{color:var(--text);border-color:var(--text-muted)}
+  .add-block[hidden]{display:none}
   .sub-row .sub-euro{text-align:right;font:11px 'IBM Plex Mono',monospace;color:var(--text-muted);margin:0;white-space:nowrap}
   .split-equivalent{font:12px 'IBM Plex Mono',monospace;color:var(--text-muted)}
   .allocation-hint{font-size:12px;color:var(--text-muted);margin:-7px 0 16px;line-height:1.5}
-  @media(max-width:440px){.sub-row{grid-template-columns:minmax(0,1fr) 92px 70px;gap:6px}.sub-row .sub-euro{font-size:10px}}
+  @media(max-width:440px){.sub-row{grid-template-columns:minmax(0,1fr) 88px 64px 28px;gap:6px}.sub-row .sub-euro{font-size:10px}}
   .sub-row input[type=number]{min-width:0}
   .block-total-euro{font:12px 'IBM Plex Mono',monospace;margin-top:5px;color:var(--text)}
   .allocation-summary{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;padding:12px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;font:12px 'IBM Plex Mono',monospace}
@@ -330,7 +355,7 @@
     <div class="eyebrow">Gestione portfolio</div>
     <h1><span class="core-word">Core</span> <span class="amp">&amp;</span> <span class="satellite-word">Satellite</span></h1>
     <div class="accent-rule"></div>
-    <p>Registra ogni movimento (accumulo, saveback, utile, vendita o perdita), suddividilo in euro tra Core e Satellite e assegna gli importi ai singoli strumenti. Le percentuali vengono calcolate automaticamente e il portfolio si aggiorna nel tempo.</p>
+    <p>Registra ogni movimento (accumulo, vendita, saveback, utile, perdita, imposte o commissioni), suddividilo in euro tra Core e Satellite e assegna gli importi ai singoli strumenti. Le percentuali vengono calcolate automaticamente e il portfolio si aggiorna nel tempo.</p>
     <div class="totalbar">
       <span class="label">Totale investito finora</span>
       <span class="value" id="totalInvested">€ 0</span>
@@ -338,16 +363,18 @@
   </header>
 
   <section class="step">
-    <div class="step-head">
+    <div class="step-head" data-collapse="step1" role="button" aria-expanded="true">
       <span class="step-num">01</span>
       <span class="step-title">Importo del movimento</span>
     </div>
     <div class="mode-switch" role="group" aria-label="Tipo di movimento">
       <button type="button" data-kind="accumulo" class="active">＋ Accumulo</button>
+      <button type="button" data-kind="vendita">− Vendita</button>
       <button type="button" data-kind="saveback">↺ Saveback</button>
       <button type="button" data-kind="utile">▲ Utile</button>
-      <button type="button" data-kind="vendita">− Vendita</button>
       <button type="button" data-kind="perdita">▼ Perdita</button>
+      <button type="button" data-kind="imposte">▼ Imposte</button>
+      <button type="button" data-kind="commissioni">▼ Commissioni</button>
     </div>
     <div class="amount-date-row">
       <div class="amount-row">
@@ -362,7 +389,7 @@
   </section>
 
   <section class="step">
-    <div class="step-head">
+    <div class="step-head" data-collapse="step2" role="button" aria-expanded="true">
       <span class="step-num">02</span>
       <span class="step-title">Suddivisione Core / Satellite</span>
     </div>
@@ -381,20 +408,22 @@
   </section>
 
   <section class="step">
-    <div class="step-head">
+    <div class="step-head" data-collapse="step3" role="button" aria-expanded="true">
       <span class="step-num">03</span>
       <span class="step-title">Allocazione dei blocchi</span>
     </div>
     <p class="allocation-hint">Inserisci direttamente gli importi in euro. La percentuale corrispondente viene mostrata accanto a ogni blocco.</p>
     <div class="sub-blocks">
       <div class="sub-block core-block">
-        <div class="sub-block-head"><span class="dot core"></span><span class="sub-block-title">Core — 6 blocchi</span></div>
+        <div class="sub-block-head"><span class="dot core"></span><span class="sub-block-title">Core</span></div>
         <div id="coreRows"></div>
+        <button type="button" class="add-block" data-add="core">＋ Aggiungi blocco</button>
         <div class="sub-total" id="coreSubTotal"></div>
       </div>
       <div class="sub-block satellite-block">
-        <div class="sub-block-head"><span class="dot satellite"></span><span class="sub-block-title">Satellite — 6 blocchi</span></div>
+        <div class="sub-block-head"><span class="dot satellite"></span><span class="sub-block-title">Satellite</span></div>
         <div id="satRows"></div>
+        <button type="button" class="add-block" data-add="satellite">＋ Aggiungi blocco</button>
         <div class="sub-total" id="satSubTotal"></div>
       </div>
     </div>
@@ -414,17 +443,17 @@
 
   <section class="portfolio-section">
     <div class="portfolio-head">
-      <h2>Portfolio complessivo</h2>
+      <h2 data-collapse="portfolio" role="button" aria-expanded="true">Portfolio complessivo</h2>
       <button class="btn-secondary" id="resetAllBtn">Azzera tutto</button>
     </div>
     <div id="portfolioBody"></div>
   </section>
 
   <div class="history" id="historyWrap" style="display:none;">
-    <h3>Storico investimenti</h3>
+    <h3 data-collapse="history" role="button" aria-expanded="true">Storico investimenti</h3>
     <div class="history-tools">
       <div class="search-field"><label for="historySearch">Ricerca strumenti</label><input type="text" id="historySearch" placeholder="Cerca strumento..."></div>
-      <div><label for="historyKind">Tipo</label><select id="historyKind"><option value="">Tutti</option><option value="accumulo">Accumulo</option><option value="saveback">Saveback</option><option value="utile">Utile</option><option value="vendita">Vendita</option><option value="perdita">Perdita</option></select></div>
+      <div><label for="historyKind">Tipo</label><select id="historyKind"><option value="">Tutti</option><option value="accumulo">Accumulo</option><option value="vendita">Vendita</option><option value="saveback">Saveback</option><option value="utile">Utile</option><option value="perdita">Perdita</option><option value="imposte">Imposte</option><option value="commissioni">Commissioni</option></select></div>
       <div><label for="historyYear">Anno</label><select id="historyYear"><option value="">Tutti</option></select></div>
       <div><label for="historyMonth">Mese</label><select id="historyMonth"><option value="">Tutti</option></select></div>
       <div><label for="historyDay">Giorno</label><select id="historyDay"><option value="">Tutti</option></select></div>
@@ -440,13 +469,15 @@ const NAMES_KEY = 'core_satellite_block_names';
 let transactions = [];
 let editingId = null;
 const SLOTS = 6;
-// Tipi di movimento: accumulo, saveback e utile aumentano il portfolio, vendita e perdita lo riducono.
+// Tipi di movimento: accumulo, saveback e utile aumentano il portfolio; vendita, perdita, imposte e commissioni lo riducono.
 const KINDS = {
   accumulo: { sign: 1,  tone: '',     badge: 'Accumulo', label: 'Quanto stai accumulando (€)', cta: 'Registra accumulo nel portfolio', ready: 'Pronto per registrare l’accumulo.', empty: 'Inserisci l’importo complessivo dell’accumulo.' },
   vendita:  { sign: -1, tone: '',     badge: 'Vendita',  label: 'Quanto stai vendendo (€)',    cta: 'Registra vendita dal portfolio',  ready: 'Pronto per registrare la vendita.',  empty: 'Inserisci l’importo complessivo della vendita.' },
   saveback: { sign: 1,  tone: 'gain', badge: 'Saveback', label: 'Importo del saveback (€)',    cta: 'Registra saveback nel portfolio', ready: 'Pronto per registrare il saveback.', empty: 'Inserisci l’importo complessivo del saveback.' },
   utile:    { sign: 1,  tone: 'gain', badge: 'Utile',    label: 'Quanto hai guadagnato (€)',   cta: 'Registra utile nel portfolio',    ready: 'Pronto per registrare l’utile.',     empty: 'Inserisci l’importo complessivo dell’utile.' },
-  perdita:  { sign: -1, tone: 'loss', badge: 'Perdita',  label: 'Quanto hai perso (€)',        cta: 'Registra perdita nel portfolio',  ready: 'Pronto per registrare la perdita.',  empty: 'Inserisci l’importo complessivo della perdita.' }
+  perdita:  { sign: -1, tone: 'loss', badge: 'Perdita',  label: 'Quanto hai perso (€)',        cta: 'Registra perdita nel portfolio',  ready: 'Pronto per registrare la perdita.',  empty: 'Inserisci l’importo complessivo della perdita.' },
+  imposte:  { sign: -1, tone: 'loss', badge: 'Imposte',  label: 'Quante imposte hai pagato (€)', cta: 'Registra imposte nel portfolio', ready: 'Pronto per registrare le imposte.', empty: 'Inserisci l’importo complessivo delle imposte.' },
+  commissioni: { sign: -1, tone: 'loss', badge: 'Commissioni', label: 'Quante commissioni hai pagato (€)', cta: 'Registra commissioni nel portfolio', ready: 'Pronto per registrare le commissioni.', empty: 'Inserisci l’importo complessivo delle commissioni.' }
 };
 let kind = 'accumulo';
 function isReduction(k){ return KINDS[k || kind].sign < 0; }
@@ -455,31 +486,106 @@ function txKind(t){ return (t.kind && KINDS[t.kind]) ? t.kind : (t.amount < 0 ? 
 const coreNamesDefault = ['Core 1', 'Core 2', 'Core 3', 'Core 4', 'Core 5', 'Core 6'];
 const satNamesDefault = ['Satellite 1', 'Satellite 2', 'Satellite 3', 'Satellite 4', 'Satellite 5', 'Satellite 6'];
 // 12 colori tutti diversi: uno per ogni blocco (6 Core + 6 Satellite).
-const corePalette = ['#4f7cff', '#3cb44b', '#46f0f0', '#a050e0', '#bcf60c', '#8a93a0'];
-const satPalette  = ['#e6194b', '#f58231', '#ffe119', '#f032e6', '#00a896', '#ffa8b8'];
+const corePalette = ['#5f8fd6', '#62b9d6', '#45a89a', '#6bb36f', '#9b7fcf', '#9aa3ad']; // blu, azzurro, verde acqua, verde, viola, grigio
+const satPalette  = ['#d0685f', '#d9945a', '#e2c65c', '#d98aae', '#9c7658', '#9fb255']; // rosso, arancione, giallo, rosa, marrone, lime
 const extraPalette = ['#9aa5b1', '#e6d3a3', '#7f9f5a', '#c98f9f', '#6f8fb0', '#b5a0d0'];
-function normalizeNames(arr, defaults){
-  return Array.from({length: SLOTS}, (_, i) =>
-    (arr && arr[i] !== undefined && String(arr[i]).trim() !== '') ? String(arr[i]) : defaults[i]);
-}
-let savedBlockNames = { core: [...coreNamesDefault], satellite: [...satNamesDefault] };
+// Blocchi Core/Satellite: di base uno solo per tipo; se ne possono aggiungere fino a 6 e togliere (resta sempre almeno uno).
+// Ogni blocco ha una "posizione colore" (0-5) che non cambia quando se ne toglie un altro, così il suo colore resta stabile.
+let savedBlockNames = { core: [coreNamesDefault[0]], satellite: [satNamesDefault[0]], coreSlots: [0], satSlots: [0] };
+const slotsKey = type => type === 'core' ? 'coreSlots' : 'satSlots';
+const rowsId = type => type === 'core' ? 'coreRows' : 'satRows';
 
-function buildRows(containerId, names, values){
+function normalizeBlocks(saved, type, usedNames){
+  const defaults = type === 'core' ? coreNamesDefault : satNamesDefault;
+  const rawNames = saved && Array.isArray(saved[type]) ? saved[type] : null;
+  const rawSlots = saved && Array.isArray(saved[slotsKey(type)]) ? saved[slotsKey(type)] : null;
+  const names = [], slots = [];
+  if (rawNames && rawNames.length){
+    if (rawSlots && rawSlots.length === rawNames.length){
+      rawNames.forEach((n, i) => {
+        const sl = rawSlots[i];
+        if (Number.isInteger(sl) && sl >= 0 && sl < SLOTS && !slots.includes(sl)){
+          names.push(String(n).trim() ? String(n) : defaults[sl]); slots.push(sl);
+        }
+      });
+    } else {
+      // Formato precedente (6 blocchi sempre presenti): tolgo solo quelli in coda ancora vuoti, con nome predefinito e mai usati.
+      const isFree = (n, k) => {
+        const v = String(n).trim().toLowerCase();
+        return (v === '' || v === defaults[k].toLowerCase()) && !usedNames.has(v || defaults[k].toLowerCase());
+      };
+      let last = Math.min(rawNames.length, SLOTS) - 1;
+      while (last > 0 && isFree(rawNames[last], last)) last--;
+      for (let k = 0; k <= last; k++){
+        names.push(String(rawNames[k]).trim() ? String(rawNames[k]) : defaults[k]); slots.push(k);
+      }
+    }
+  }
+  if (!names.length){ names.push(defaults[0]); slots.push(0); }
+  return { names, slots };
+}
+
+function updateBlockControls(){
+  ['core', 'satellite'].forEach(type => {
+    const c = document.getElementById(rowsId(type));
+    const n = c.querySelectorAll('.sub-row').length;
+    c.querySelectorAll('.sub-row').forEach(r => r.classList.toggle('only', n === 1));
+    document.querySelector(`.add-block[data-add="${type}"]`).hidden = n >= SLOTS;
+  });
+}
+
+function appendRow(containerId, name, value, slot){
+  const c = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = 'sub-row';
+  row.dataset.slot = String(slot);
+  row.innerHTML = `
+    <input type="text" class="sub-name" value="${escapeAttr(name)}" placeholder="Nome blocco">
+    <input type="text" inputmode="decimal" autocomplete="off" class="sub-pct" value="${escapeAttr(value === 0 || value === undefined ? '' : value)}" placeholder="€" aria-label="Importo in euro">
+    <div class="sub-euro">—</div>
+    <button type="button" class="sub-remove" title="Togli blocco" aria-label="Togli blocco">✕</button>
+  `;
+  c.appendChild(row);
+  return row;
+}
+
+function buildRows(containerId, names, values, slots){
+  const type = containerId === 'coreRows' ? 'core' : 'satellite';
   const c = document.getElementById(containerId);
   c.innerHTML = '';
-  names.forEach((n, i) => {
-    const row = document.createElement('div');
-    row.className = 'sub-row';
-    const euroVal = (values && values[i] !== undefined) ? values[i] : 0;
-    row.innerHTML = `
-      <input type="text" class="sub-name" data-i="${i}" value="${escapeAttr(n)}" placeholder="Nome blocco">
-      <input type="text" inputmode="decimal" autocomplete="off" class="sub-pct" data-i="${i}" value="${euroVal === 0 ? '' : euroVal}" placeholder="€" aria-label="Importo in euro">
-      <div class="sub-euro">—</div>
-    `;
-    c.appendChild(row);
-  });
+  names.forEach((n, i) => appendRow(containerId, n, values ? values[i] : 0, slots && slots[i] !== undefined ? slots[i] : i));
+  updateBlockControls();
   updateSubTotals();
 }
+
+function addBlock(type){
+  const id = rowsId(type), c = document.getElementById(id);
+  const rows = [...c.querySelectorAll('.sub-row')];
+  if (rows.length >= SLOTS) return;
+  const used = rows.map(r => Number(r.dataset.slot));
+  let slot = -1;
+  for (let k = 0; k < SLOTS; k++){ if (!used.includes(k)){ slot = k; break; } }
+  const defaults = type === 'core' ? coreNamesDefault : satNamesDefault;
+  const row = appendRow(id, slot >= 0 ? defaults[slot] : defaults[0], '', slot);
+  updateBlockControls();
+  updateSubTotals();
+  saveBlockNames();
+  const inp = row.querySelector('.sub-name');
+  inp.focus(); inp.select();
+}
+function removeBlock(row){
+  const c = row.parentElement;
+  if (c.querySelectorAll('.sub-row').length <= 1) return;
+  row.remove();
+  updateBlockControls();
+  updateSubTotals();
+  saveBlockNames();
+}
+document.querySelectorAll('.add-block').forEach(b => b.addEventListener('click', () => addBlock(b.dataset.add)));
+['coreRows', 'satRows'].forEach(id => document.getElementById(id).addEventListener('click', (e) => {
+  const btn = e.target.closest('.sub-remove');
+  if (btn) removeBlock(btn.closest('.sub-row'));
+}));
 
 function escapeAttr(value){return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function todayISODate(){
@@ -709,12 +815,7 @@ async function loadBlockNames(){
   }
 }
 
-async function saveBlockNames(){
-  // I nomi configurati sono indipendenti dai nomi storici caricati durante la modifica di una vecchia operazione.
-  if (editingId !== null) return;
-  const coreNames = [...document.querySelectorAll('#coreRows .sub-name')].map(i => i.value);
-  const satNames = [...document.querySelectorAll('#satRows .sub-name')].map(i => i.value);
-  savedBlockNames = { core: coreNames, satellite: satNames };
+async function persistBlocks(){
   try{
     if (hasClaudeStorage()){
       await window.storage.set(NAMES_KEY, JSON.stringify(savedBlockNames), false);
@@ -724,6 +825,17 @@ async function saveBlockNames(){
   }catch(e){
     console.error('Storage error (nomi blocchi)', e);
   }
+}
+async function saveBlockNames(){
+  // I blocchi configurati sono indipendenti dai nomi storici caricati durante la modifica di una vecchia operazione.
+  if (editingId !== null) return;
+  const read = id => [...document.querySelectorAll(`#${id} .sub-row`)].map(r => ({ name: r.querySelector('.sub-name').value, slot: Number(r.dataset.slot) }));
+  const core = read('coreRows'), sat = read('satRows');
+  savedBlockNames = {
+    core: core.map(b => b.name), coreSlots: core.map(b => b.slot),
+    satellite: sat.map(b => b.name), satSlots: sat.map(b => b.slot)
+  };
+  await persistBlocks();
 }
 
 function dateInputToISO(dateStr){
@@ -742,8 +854,8 @@ function resetFormAfterSave(){
   kind = 'accumulo';
   document.getElementById('editBanner').style.display = 'none';
   applyModeUI();
-  buildRows('coreRows', savedBlockNames.core || coreNamesDefault);
-  buildRows('satRows', savedBlockNames.satellite || satNamesDefault);
+  buildRows('coreRows', savedBlockNames.core, null, savedBlockNames.coreSlots);
+  buildRows('satRows', savedBlockNames.satellite, null, savedBlockNames.satSlots);
   updateSplitUI();
   updateSubTotals();
 }
@@ -847,13 +959,33 @@ function colorFor(cat){
 // Ogni blocco ha il proprio colore fisso (in base alla posizione 1-6 di Core e Satellite),
 // così i 12 blocchi hanno sempre colori tutti diversi; i nomi storici non più presenti
 // tra i blocchi attuali ricevono un colore di riserva.
+let customColors = {};
+const COLORS_KEY = 'core_satellite_colors';
+async function loadColors(){
+  try{
+    if (hasClaudeStorage()){
+      const res = await window.storage.get(COLORS_KEY, false);
+      return res ? JSON.parse(res.value) : {};
+    }
+    const raw = localStorage.getItem(COLORS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+async function saveColors(){
+  try{
+    if (hasClaudeStorage()) await window.storage.set(COLORS_KEY, JSON.stringify(customColors), false);
+    else localStorage.setItem(COLORS_KEY, JSON.stringify(customColors));
+  }catch(e){ console.error('Storage error (colori)', e); }
+}
 function buildDetailColorMap(categories){
   const map = {};
   [['core', corePalette], ['satellite', satPalette]].forEach(([type, pal]) => {
+    const slots = savedBlockNames[slotsKey(type)] || [];
     (savedBlockNames[type] || []).forEach((n, i) => {
       const name = String(n).trim().toLowerCase();
       const k = type + ':' + name;
-      if (name && !(k in map)) map[k] = pal[i % pal.length];
+      const sl = slots[i] !== undefined ? slots[i] : i;
+      if (name && !(k in map)) map[k] = pal[sl % pal.length];
     });
   });
   let extra = 0;
@@ -862,6 +994,7 @@ function buildDetailColorMap(categories){
     const k = cat.type + ':' + cat.label.toLowerCase();
     if (!(k in map)) map[k] = extraPalette[extra++ % extraPalette.length];
   });
+  Object.keys(customColors).forEach(k => { if (k in map && /^#[0-9a-f]{6}$/i.test(customColors[k])) map[k] = customColors[k]; });
   return map;
 }
 function makeColorForDetail(map){
@@ -998,13 +1131,20 @@ function render(){
     const colorForDetail = makeColorForDetail(detailColorMap);
     const detailSorted = [...categories].sort((a,b) => b.amount - a.amount);
 
-    const legendHtml = (list, total, colorFn) => list.map(c => `
+    const legendHtml = (list, total, colorFn, pick) => list.map(c => {
+      const col = colorFn(c);
+      const canPick = pick && c.type !== 'cash' && c.label !== 'Non allocato';
+      const dot = canPick
+        ? `<label class="dot color-pick" style="background:${col}" title="Cambia colore"><input type="color" value="${col}" data-ckey="${escapeAttr(c.type + ':' + c.label.toLowerCase())}" aria-label="Cambia colore di ${escapeAttr(c.label)}"></label>`
+        : `<span class="dot" style="background:${col}"></span>`;
+      return `
       <div class="legend-row">
-        <span class="dot" style="background:${colorFn(c)}"></span>
+        ${dot}
         <span class="lname">${c.label}</span>
         <span class="lpct">${fmtPct(c.amount/total*100)}</span>
         <span class="lval">${fmtEuro(c.amount)}</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     const legendHtmlStacked = (list, total, colorFn) => list.map(c => `
       <div class="legend-row-stacked">
@@ -1023,14 +1163,13 @@ function render(){
     const coreOnlyTotal = coreOnly.reduce((a,c) => a + c.amount, 0);
     const satOnlyTotal = satOnly.reduce((a,c) => a + c.amount, 0);
 
-    let gains = 0, saveback = 0, losses = 0, gainsN = 0, savebackN = 0, lossesN = 0;
+    const sums = { utile: 0, saveback: 0, perdita: 0, imposte: 0, commissioni: 0 };
+    const cnt = { utile: 0, saveback: 0, perdita: 0, imposte: 0, commissioni: 0 };
     transactions.forEach(t => {
       const k = txKind(t);
-      if (k === 'utile'){ gains += Math.abs(t.amount); gainsN++; }
-      else if (k === 'saveback'){ saveback += Math.abs(t.amount); savebackN++; }
-      else if (k === 'perdita'){ losses += Math.abs(t.amount); lossesN++; }
+      if (k in sums){ sums[k] += Math.abs(t.amount); cnt[k]++; }
     });
-    const net = gains + saveback - losses;
+    const net = sums.utile + sums.saveback - sums.perdita - sums.imposte - sums.commissioni;
     const netTone = net > 0.005 ? 'gain' : (net < -0.005 ? 'loss' : '');
     const mov = n => `${n} moviment${n === 1 ? 'o' : 'i'}`;
 
@@ -1064,40 +1203,52 @@ function render(){
           <div class="chart-panel-title">Dettaglio per strumento</div>
           <div class="chart-legend-wrap">
             <div class="donut-holder">${buildDonut(detailSorted, totalAmount, colorForDetail)}</div>
-            <div class="legend">${legendHtml(detailSorted, totalAmount, colorForDetail)}</div>
+            <div class="legend">${legendHtml(detailSorted, totalAmount, colorForDetail, true)}</div>
           </div>
+          <div class="pick-hint">Tocca il pallino di uno strumento per scegliere il suo colore.</div>
+          ${Object.keys(customColors).length ? '<button type="button" class="link-btn" id="resetColors">Ripristina i colori originali</button>' : ''}
         </div>
       </div>
       <div class="charts-row">
         <div class="chart-panel">
-          <div class="chart-panel-title">Utile, saveback e perdite</div>
+          <div class="chart-panel-title">Entrate e uscite</div>
           <div class="pl-grid">
             <div class="pl-box">
               <span class="pl-label">Utile</span>
-              <span class="pl-val gain">${fmtEuro(gains)}</span>
-              <span class="pl-sub">${mov(gainsN)}</span>
+              <span class="pl-val gain">${fmtEuro(sums.utile)}</span>
+              <span class="pl-sub">${mov(cnt.utile)}</span>
             </div>
             <div class="pl-box">
               <span class="pl-label">Saveback</span>
-              <span class="pl-val gain">${fmtEuro(saveback)}</span>
-              <span class="pl-sub">${mov(savebackN)}</span>
+              <span class="pl-val gain">${fmtEuro(sums.saveback)}</span>
+              <span class="pl-sub">${mov(cnt.saveback)}</span>
             </div>
-            <div class="pl-box wide">
+            <div class="pl-box third">
               <span class="pl-label">Perdite</span>
-              <span class="pl-val loss">${losses > 0.005 ? '− ' : ''}${fmtEuro(losses)}</span>
-              <span class="pl-sub">${mov(lossesN)}</span>
+              <span class="pl-val loss">${sums.perdita > 0.005 ? '− ' : ''}${fmtEuro(sums.perdita)}</span>
+              <span class="pl-sub">${mov(cnt.perdita)}</span>
+            </div>
+            <div class="pl-box third">
+              <span class="pl-label">Imposte</span>
+              <span class="pl-val loss">${sums.imposte > 0.005 ? '− ' : ''}${fmtEuro(sums.imposte)}</span>
+              <span class="pl-sub">${mov(cnt.imposte)}</span>
+            </div>
+            <div class="pl-box third">
+              <span class="pl-label">Commissioni</span>
+              <span class="pl-val loss">${sums.commissioni > 0.005 ? '− ' : ''}${fmtEuro(sums.commissioni)}</span>
+              <span class="pl-sub">${mov(cnt.commissioni)}</span>
             </div>
             <div class="pl-box wide">
               <span class="pl-label">Risultato netto</span>
               <span class="pl-val${netTone ? ' ' + netTone : ''}">${net < -0.005 ? '− ' + fmtEuro(-net) : fmtEuro(net)}</span>
-              <span class="pl-sub">utile + saveback − perdite</span>
+              <span class="pl-sub">utile + saveback − perdite − imposte − commissioni</span>
             </div>
           </div>
-        </div>
       </div>`;
   }
 
   renderHistory();
+  applyCollapsed();
 }
 
 window.removeTx = async function(id){
@@ -1120,34 +1271,91 @@ window.editTx = function(id){
   satEuroEl.value = toStr(absAmount * t.satPct / 100);
   txDateEl.value = new Date(t.date).toISOString().slice(0,10);
 
-  // Rimette ogni importo nel blocco con lo stesso nome; gli eventuali nomi storici
-  // non più presenti finiscono nei primi blocchi liberi.
-  function fillSlots(savedSub, slotNames, blockBudget){
-    const names = [...slotNames], euros = new Array(SLOTS).fill(0), used = new Array(SLOTS).fill(false), left = [];
+  // Rimette ogni importo nel blocco con lo stesso nome; i nomi storici non più presenti
+  // tra i blocchi attuali compaiono come blocchi in più (solo per questa modifica).
+  function fillBlocks(savedSub, blockNames, blockSlots, blockBudget){
+    const names = [...blockNames], slots = [...blockSlots], euros = names.map(() => 0), left = [];
     const toEuro = e => Number((blockBudget * e.pct / 100).toFixed(2));
     (savedSub || []).forEach(e => {
-      const i = names.findIndex((n, j) => !used[j] && n.trim().toLowerCase() === String(e.name).trim().toLowerCase());
-      if (i >= 0){ used[i] = true; euros[i] = toEuro(e); } else left.push(e);
+      const i = names.findIndex(n => n.trim().toLowerCase() === String(e.name).trim().toLowerCase());
+      if (i >= 0) euros[i] = Number((euros[i] + toEuro(e)).toFixed(2)); else left.push(e);
     });
-    left.forEach(e => {
-      const i = used.findIndex(u => !u);
-      if (i >= 0){ used[i] = true; names[i] = e.name; euros[i] = toEuro(e); }
-    });
-    return { names, euros };
+    left.forEach(e => { names.push(e.name); slots.push(-1); euros.push(toEuro(e)); });
+    return { names, slots, euros };
   }
-  const coreData = fillSlots(t.coreSub, savedBlockNames.core || coreNamesDefault, parseEuroInput(coreEuroEl.value));
-  const satData = fillSlots(t.satSub, savedBlockNames.satellite || satNamesDefault, parseEuroInput(satEuroEl.value));
-  buildRows('coreRows', coreData.names, coreData.euros);
-  buildRows('satRows', satData.names, satData.euros);
+  const coreData = fillBlocks(t.coreSub, savedBlockNames.core, savedBlockNames.coreSlots, parseEuroInput(coreEuroEl.value));
+  const satData = fillBlocks(t.satSub, savedBlockNames.satellite, savedBlockNames.satSlots, parseEuroInput(satEuroEl.value));
+  buildRows('coreRows', coreData.names, coreData.euros, coreData.slots);
+  buildRows('satRows', satData.names, satData.euros, satData.slots);
 
   document.getElementById('editBanner').style.display = 'flex';
   applyModeUI();
   updateSplitUI();
   updateSubTotals();
+  ['step1','step2','step3'].forEach(k => { delete collapsedUI[k]; });
+  applyCollapsed();
+  saveCollapsed();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+const COLLAPSE_KEY = 'core_satellite_collapsed';
+let collapsedUI = {};
+function collapseHeadKey(h){ return h.dataset.collapse || ('panel:' + h.textContent.trim()); }
+function collapseTarget(h){ return h.closest('section.step, .portfolio-section, .history, .chart-panel'); }
+function applyCollapsed(){
+  document.querySelectorAll('[data-collapse], .chart-panel-title').forEach(h => {
+    const t = collapseTarget(h);
+    if (!t) return;
+    const closed = !!collapsedUI[collapseHeadKey(h)];
+    t.classList.toggle('collapsed', closed);
+    h.setAttribute('aria-expanded', closed ? 'false' : 'true');
+  });
+}
+async function saveCollapsed(){
+  try{
+    if (hasClaudeStorage()) await window.storage.set(COLLAPSE_KEY, JSON.stringify(collapsedUI), false);
+    else localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsedUI));
+  }catch(e){ console.error('Storage error (schermate chiuse)', e); }
+}
+async function loadCollapsed(){
+  try{
+    if (hasClaudeStorage()){
+      const res = await window.storage.get(COLLAPSE_KEY, false);
+      return res ? JSON.parse(res.value) : {};
+    }
+    const raw = localStorage.getItem(COLLAPSE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+document.addEventListener('click', (e) => {
+  const h = e.target.closest('[data-collapse], .chart-panel-title');
+  if (!h) return;
+  const key = collapseHeadKey(h);
+  if (collapsedUI[key]) delete collapsedUI[key]; else collapsedUI[key] = true;
+  applyCollapsed();
+  saveCollapsed();
+});
+
+document.addEventListener('change', async (e) => {
+  const inp = e.target.closest && e.target.closest('input[type=color][data-ckey]');
+  if (!inp) return;
+  customColors[inp.dataset.ckey] = inp.value;
+  await saveColors();
+  render();
+});
+document.addEventListener('click', async (e) => {
+  if (e.target.id !== 'resetColors') return;
+  customColors = {};
+  await saveColors();
+  render();
+});
+
 async function init(){
+  customColors = await loadColors();
+  if (!customColors || typeof customColors !== 'object') customColors = {};
+  collapsedUI = await loadCollapsed();
+  if (!collapsedUI || typeof collapsedUI !== 'object') collapsedUI = {};
+  applyCollapsed();
   txDateEl.value = todayISODate();
 
   // Seleziona tutto il contenuto dei campi numerici al focus/tap, così
@@ -1159,13 +1367,16 @@ async function init(){
     }
   });
 
+  await loadTransactions();
+  const usedNames = new Set();
+  transactions.forEach(t => [...(t.coreSub || []), ...(t.satSub || [])].forEach(x => usedNames.add(String(x.name).trim().toLowerCase())));
   const savedNames = await loadBlockNames();
-  savedBlockNames = {
-    core: normalizeNames(savedNames && Array.isArray(savedNames.core) ? savedNames.core : null, coreNamesDefault),
-    satellite: normalizeNames(savedNames && Array.isArray(savedNames.satellite) ? savedNames.satellite : null, satNamesDefault)
-  };
-  buildRows('coreRows', savedBlockNames.core);
-  buildRows('satRows', savedBlockNames.satellite);
+  const coreB = normalizeBlocks(savedNames, 'core', usedNames), satB = normalizeBlocks(savedNames, 'satellite', usedNames);
+  savedBlockNames = { core: coreB.names, coreSlots: coreB.slots, satellite: satB.names, satSlots: satB.slots };
+  buildRows('coreRows', savedBlockNames.core, null, savedBlockNames.coreSlots);
+  buildRows('satRows', savedBlockNames.satellite, null, savedBlockNames.satSlots);
+  await persistBlocks();
+  render();
 
   document.getElementById('coreRows').addEventListener('focusout', (e) => {
     if (e.target.classList.contains('sub-name')) saveBlockNames();
@@ -1177,7 +1388,6 @@ async function init(){
   applyModeUI();
   updateSplitUI();
   updateSubTotals();
-  loadTransactions();
 }
 init();
 </script>
