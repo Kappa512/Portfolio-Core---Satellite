@@ -243,8 +243,27 @@
   .pl-box.wide{ grid-column: 1 / -1; }
   .pick-hint{ font-size: 12px; color: var(--text-muted); margin: 0 0 12px; }
   .link-btn{ background:none; border:none; padding:0; margin-top:12px; font-size:12px; color:var(--text-muted); text-decoration:underline; cursor:pointer; width:auto; }
-  .dot.color-pick{ position:relative; cursor:pointer; flex:0 0 auto; }
-  .color-pick input{ position:absolute; top:-9px; left:-9px; width:26px; height:26px; opacity:0; cursor:pointer; border:0; padding:0; }
+  button.dot.color-pick{ position:relative; width:8px; height:8px; min-width:0; padding:0; border:0; border-radius:50%; flex:0 0 auto; font-size:0; }
+  button.dot.color-pick::before{ content:''; position:absolute; inset:-11px; }
+  .cp-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center; z-index:1000; }
+  .cp-overlay[hidden]{ display:none; }
+  .cp-sheet{ width:100%; max-width:460px; background:var(--panel); border:1px solid var(--border); border-radius:16px 16px 0 0; padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px)); max-height:92vh; overflow:auto; }
+  .cp-head{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .cp-prev{ width:34px; height:34px; border-radius:9px; border:1px solid var(--border); flex:0 0 auto; }
+  .cp-title{ font-size:15px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
+  .cp-hex{ font:12px 'IBM Plex Mono',monospace; color:var(--text-muted); display:block; font-weight:400; }
+  .cp-grid{ display:grid; grid-template-columns:repeat(8,1fr); gap:8px; margin-bottom:16px; }
+  .cp-sw{ aspect-ratio:1; width:100%; min-width:0; padding:0; border-radius:50%; border:2px solid transparent; }
+  .cp-sw.on{ border-color:#fff; }
+  .cp-lab{ display:block; font-size:12px; color:var(--text-muted); margin:10px 0 2px; }
+  .cp-sheet input.cp-range{ -webkit-appearance:none; appearance:none; display:block; width:100%; height:16px; padding:0; margin:6px 0; border:0; border-radius:8px; outline:none; }
+  .cp-sheet input.cp-range::-webkit-slider-thumb{ -webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:#fff; border:2px solid rgba(0,0,0,.45); box-shadow:0 1px 4px rgba(0,0,0,.5); }
+  .cp-sheet input.cp-range::-moz-range-thumb{ width:22px; height:22px; border-radius:50%; background:#fff; border:2px solid rgba(0,0,0,.45); }
+  .cp-actions{ display:flex; align-items:center; gap:10px; margin-top:20px; }
+  .cp-actions .sp{ flex:1; }
+  .cp-actions .link-btn{ margin-top:0; }
+  .cp-btn{ background:var(--panel-2); color:var(--text); border:1px solid var(--border); }
+  .cp-btn.ok{ background:var(--core); color:#0e1513; border-color:var(--core); }
   .pl-box{ background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; min-width: 0; }
   .pl-label{ display:block; font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
   .pl-val{ display:block; font-family:'IBM Plex Mono', monospace; font-size: 20px; overflow-wrap: anywhere; }
@@ -463,6 +482,21 @@
 
 </div>
 
+<div class="cp-overlay" id="cpOverlay" hidden>
+  <div class="cp-sheet" role="dialog" aria-modal="true" aria-labelledby="cpTitle">
+    <div class="cp-head"><span class="cp-prev" id="cpPrev"></span><span class="cp-title"><span id="cpTitle"></span><span class="cp-hex" id="cpHex"></span></span></div>
+    <div class="cp-grid" id="cpGrid"></div>
+    <label class="cp-lab" for="cpH">Tonalità</label><input type="range" class="cp-range" id="cpH" min="0" max="360" step="1">
+    <label class="cp-lab" for="cpS">Intensità</label><input type="range" class="cp-range" id="cpS" min="0" max="100" step="1">
+    <label class="cp-lab" for="cpL">Chiarezza</label><input type="range" class="cp-range" id="cpL" min="0" max="100" step="1">
+    <div class="cp-actions">
+      <button type="button" class="link-btn" id="cpReset">Colore originale</button>
+      <span class="sp"></span>
+      <button type="button" class="cp-btn" id="cpCancel">Annulla</button>
+      <button type="button" class="cp-btn ok" id="cpOk">Imposta</button>
+    </div>
+  </div>
+</div>
 <script>
 const STORAGE_KEY = 'core_satellite_transactions';
 const NAMES_KEY = 'core_satellite_block_names';
@@ -1135,7 +1169,7 @@ function render(){
       const col = colorFn(c);
       const canPick = pick && c.type !== 'cash' && c.label !== 'Non allocato';
       const dot = canPick
-        ? `<label class="dot color-pick" style="background:${col}" title="Cambia colore"><input type="color" value="${col}" data-ckey="${escapeAttr(c.type + ':' + c.label.toLowerCase())}" aria-label="Cambia colore di ${escapeAttr(c.label)}"></label>`
+        ? `<button type="button" class="dot color-pick" style="background:${col}" data-ckey="${escapeAttr(c.type + ':' + c.label.toLowerCase())}" data-label="${escapeAttr(c.label)}" data-color="${col}" title="Cambia colore" aria-label="Cambia colore di ${escapeAttr(c.label)}"></button>`
         : `<span class="dot" style="background:${col}"></span>`;
       return `
       <div class="legend-row">
@@ -1336,13 +1370,65 @@ document.addEventListener('click', (e) => {
   saveCollapsed();
 });
 
-document.addEventListener('change', async (e) => {
-  const inp = e.target.closest && e.target.closest('input[type=color][data-ckey]');
-  if (!inp) return;
-  customColors[inp.dataset.ckey] = inp.value;
-  await saveColors();
-  render();
+// ---- Selettore colore (fatto in casa: il selettore del telefono su alcuni dispositivi si apre nero e non funziona) ----
+const CP_SWATCHES = [...corePalette, ...satPalette, '#e5534b', '#f0a030', '#f2d338', '#3fbf6a', '#2fbfae', '#3f9ae0', '#8a5fd0', '#e0589a'];
+let cpKey = null, cpH = 0, cpS = 50, cpL = 50;
+function hslToHex(h, s, l){
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = n => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))));
+  return '#' + [f(0), f(8), f(4)].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+function hexToHsl(hex){
+  const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, l = (mx + mn) / 2;
+  let h = 0, sat = 0;
+  if (d){
+    sat = d / (1 - Math.abs(2 * l - 1));
+    h = mx === r ? ((g - b) / d) % 6 : (mx === g ? (b - r) / d + 2 : (r - g) / d + 4);
+    h = (h * 60 + 360) % 360;
+  }
+  return { h: Math.round(h), s: Math.round(sat * 100), l: Math.round(l * 100) };
+}
+function cpRefresh(){
+  const hex = hslToHex(cpH, cpS, cpL);
+  document.getElementById('cpPrev').style.background = hex;
+  document.getElementById('cpHex').textContent = hex.toUpperCase();
+  document.getElementById('cpH').value = cpH;
+  document.getElementById('cpS').value = cpS;
+  document.getElementById('cpL').value = cpL;
+  document.getElementById('cpH').style.background = 'linear-gradient(to right,' + [0, 60, 120, 180, 240, 300, 360].map(h => `hsl(${h},${Math.max(cpS, 40)}%,${Math.min(Math.max(cpL, 35), 65)}%)`).join(',') + ')';
+  document.getElementById('cpS').style.background = `linear-gradient(to right,hsl(${cpH},0%,${cpL}%),hsl(${cpH},100%,${cpL}%))`;
+  document.getElementById('cpL').style.background = `linear-gradient(to right,#000,hsl(${cpH},${cpS}%,50%),#fff)`;
+  document.querySelectorAll('#cpGrid .cp-sw').forEach(b => b.classList.toggle('on', b.dataset.c.toLowerCase() === hex.toLowerCase()));
+}
+function cpSetHex(hex){ const c = hexToHsl(hex); cpH = c.h; cpS = c.s; cpL = c.l; cpRefresh(); }
+function cpOpen(btn){
+  cpKey = btn.dataset.ckey;
+  document.getElementById('cpTitle').textContent = btn.dataset.label;
+  document.getElementById('cpReset').style.display = (cpKey in customColors) ? '' : 'none';
+  document.getElementById('cpGrid').innerHTML = CP_SWATCHES.map(c => `<button type="button" class="cp-sw" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join('');
+  cpSetHex(btn.dataset.color || '#8b9198');
+  document.getElementById('cpOverlay').hidden = false;
+}
+function cpClose(){ document.getElementById('cpOverlay').hidden = true; cpKey = null; }
+['cpH', 'cpS', 'cpL'].forEach(id => document.getElementById(id).addEventListener('input', () => {
+  cpH = +document.getElementById('cpH').value; cpS = +document.getElementById('cpS').value; cpL = +document.getElementById('cpL').value;
+  cpRefresh();
+}));
+document.getElementById('cpGrid').addEventListener('click', (e) => { const b = e.target.closest('.cp-sw'); if (b) cpSetHex(b.dataset.c); });
+document.getElementById('cpCancel').addEventListener('click', cpClose);
+document.getElementById('cpOverlay').addEventListener('click', (e) => { if (e.target.id === 'cpOverlay') cpClose(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && cpKey) cpClose(); });
+document.getElementById('cpOk').addEventListener('click', async () => {
+  if (cpKey) customColors[cpKey] = hslToHex(cpH, cpS, cpL);
+  cpClose(); await saveColors(); render();
 });
+document.getElementById('cpReset').addEventListener('click', async () => {
+  if (cpKey) delete customColors[cpKey];
+  cpClose(); await saveColors(); render();
+});
+document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('button.color-pick'); if (b) cpOpen(b); });
 document.addEventListener('click', async (e) => {
   if (e.target.id !== 'resetColors') return;
   customColors = {};
@@ -1390,6 +1476,21 @@ async function init(){
   updateSubTotals();
 }
 init();
+
+// Registra il service worker (sw.js) e ricarica la pagina una sola volta quando ne arriva uno nuovo,
+// così dopo un aggiornamento si vede subito la versione nuova.
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  try{
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloaded) return;
+      reloaded = true;
+      location.reload();
+    });
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }catch(e){}
+}
 </script>
 </body>
 </html>
