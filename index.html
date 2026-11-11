@@ -236,8 +236,8 @@
   }
 
   .pl-grid{ display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+  .pl-box.wide{ grid-column: 1 / -1; }
   .pl-box{ background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; min-width: 0; }
-  .pl-box.net{ grid-column: 1 / -1; }
   .pl-label{ display:block; font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
   .pl-val{ display:block; font-family:'IBM Plex Mono', monospace; font-size: 20px; overflow-wrap: anywhere; }
   .pl-sub{ display:block; font-size: 11px; color: var(--text-muted); margin-top: 4px; }
@@ -444,7 +444,7 @@ const SLOTS = 6;
 const KINDS = {
   accumulo: { sign: 1,  tone: '',     badge: 'Accumulo', label: 'Quanto stai accumulando (€)', cta: 'Registra accumulo nel portfolio', ready: 'Pronto per registrare l’accumulo.', empty: 'Inserisci l’importo complessivo dell’accumulo.' },
   vendita:  { sign: -1, tone: '',     badge: 'Vendita',  label: 'Quanto stai vendendo (€)',    cta: 'Registra vendita dal portfolio',  ready: 'Pronto per registrare la vendita.',  empty: 'Inserisci l’importo complessivo della vendita.' },
-  saveback: { sign: 1,  tone: '',     badge: 'Saveback', label: 'Importo del saveback (€)',    cta: 'Registra saveback nel portfolio', ready: 'Pronto per registrare il saveback.', empty: 'Inserisci l’importo complessivo del saveback.' },
+  saveback: { sign: 1,  tone: 'gain', badge: 'Saveback', label: 'Importo del saveback (€)',    cta: 'Registra saveback nel portfolio', ready: 'Pronto per registrare il saveback.', empty: 'Inserisci l’importo complessivo del saveback.' },
   utile:    { sign: 1,  tone: 'gain', badge: 'Utile',    label: 'Quanto hai guadagnato (€)',   cta: 'Registra utile nel portfolio',    ready: 'Pronto per registrare l’utile.',     empty: 'Inserisci l’importo complessivo dell’utile.' },
   perdita:  { sign: -1, tone: 'loss', badge: 'Perdita',  label: 'Quanto hai perso (€)',        cta: 'Registra perdita nel portfolio',  ready: 'Pronto per registrare la perdita.',  empty: 'Inserisci l’importo complessivo della perdita.' }
 };
@@ -1023,13 +1023,14 @@ function render(){
     const coreOnlyTotal = coreOnly.reduce((a,c) => a + c.amount, 0);
     const satOnlyTotal = satOnly.reduce((a,c) => a + c.amount, 0);
 
-    let gains = 0, losses = 0, gainsN = 0, lossesN = 0;
+    let gains = 0, saveback = 0, losses = 0, gainsN = 0, savebackN = 0, lossesN = 0;
     transactions.forEach(t => {
       const k = txKind(t);
       if (k === 'utile'){ gains += Math.abs(t.amount); gainsN++; }
+      else if (k === 'saveback'){ saveback += Math.abs(t.amount); savebackN++; }
       else if (k === 'perdita'){ losses += Math.abs(t.amount); lossesN++; }
     });
-    const net = gains - losses;
+    const net = gains + saveback - losses;
     const netTone = net > 0.005 ? 'gain' : (net < -0.005 ? 'loss' : '');
     const mov = n => `${n} moviment${n === 1 ? 'o' : 'i'}`;
 
@@ -1069,21 +1070,27 @@ function render(){
       </div>
       <div class="charts-row">
         <div class="chart-panel">
-          <div class="chart-panel-title">Utili e perdite</div>
+          <div class="chart-panel-title">Utile, saveback e perdite</div>
           <div class="pl-grid">
             <div class="pl-box">
-              <span class="pl-label">Utile totale</span>
+              <span class="pl-label">Utile</span>
               <span class="pl-val gain">${fmtEuro(gains)}</span>
               <span class="pl-sub">${mov(gainsN)}</span>
             </div>
             <div class="pl-box">
-              <span class="pl-label">Perdite totali</span>
+              <span class="pl-label">Saveback</span>
+              <span class="pl-val gain">${fmtEuro(saveback)}</span>
+              <span class="pl-sub">${mov(savebackN)}</span>
+            </div>
+            <div class="pl-box wide">
+              <span class="pl-label">Perdite</span>
               <span class="pl-val loss">${losses > 0.005 ? '− ' : ''}${fmtEuro(losses)}</span>
               <span class="pl-sub">${mov(lossesN)}</span>
             </div>
-            <div class="pl-box net">
+            <div class="pl-box wide">
               <span class="pl-label">Risultato netto</span>
               <span class="pl-val${netTone ? ' ' + netTone : ''}">${net < -0.005 ? '− ' + fmtEuro(-net) : fmtEuro(net)}</span>
+              <span class="pl-sub">utile + saveback − perdite</span>
             </div>
           </div>
         </div>
